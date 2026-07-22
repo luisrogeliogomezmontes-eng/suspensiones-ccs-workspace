@@ -1,0 +1,1651 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Matriz de Respaldo Eléctrico · Comparador costo-beneficio</title>
+<style>
+/* ============================================================
+   MATRIZ DE RESPALDO ELÉCTRICO — comparador de inversores y baterías
+   Diseño: "panel de instrumentos" — numéricos monoespaciados tabulares,
+   línea de "corriente" ámbar, barras de valor. Paleta validada (CVD-safe).
+   ============================================================ */
+:root{
+  --bg:#0e1217; --panel:#161b22; --panel2:#1b232c; --line:#28313c;
+  --ink:#e9eef4; --ink2:#a7b2be; --ink3:#6d7885;
+  --accent:#f5a524; --accent-soft:#f5a52422;
+  --best:#26a06b; --best-soft:#26a06b1f;
+  --base:#5b8def; --base-soft:#5b8def1f;
+  --warn:#e5674b;
+  --radius:14px; --radius-sm:9px;
+  --mono:ui-monospace,"SF Mono","JetBrains Mono","Cascadia Code",Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --shadow:0 1px 2px #0006,0 8px 24px -12px #0009;
+}
+:root[data-theme="light"]{
+  --bg:#f5f7f9; --panel:#ffffff; --panel2:#f1f3f6; --line:#e3e7ec;
+  --ink:#151f2a; --ink2:#48545f; --ink3:#7c8894;
+  --accent:#b9770c; --accent-soft:#b9770c1a;
+  --best:#1f9d6b; --best-soft:#1f9d6b18;
+  --base:#2e63d8; --base-soft:#2e63d814;
+  --warn:#c7492c;
+  --shadow:0 1px 2px #0000000d,0 10px 26px -16px #00000026;
+}
+@media (prefers-color-scheme:light){
+  :root:not([data-theme="dark"]){
+    --bg:#f5f7f9; --panel:#ffffff; --panel2:#f1f3f6; --line:#e3e7ec;
+    --ink:#151f2a; --ink2:#48545f; --ink3:#7c8894;
+    --accent:#b9770c; --accent-soft:#b9770c1a;
+    --best:#1f9d6b; --best-soft:#1f9d6b18;
+    --base:#2e63d8; --base-soft:#2e63d814;
+    --warn:#c7492c;
+    --shadow:0 1px 2px #0000000d,0 10px 26px -16px #00000026;
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:var(--sans); font-size:15px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.num{font-family:var(--mono); font-variant-numeric:tabular-nums; letter-spacing:-.01em}
+.wrap{max-width:1180px; margin:0 auto; padding:0 20px}
+
+/* ---------- header ---------- */
+.top{position:sticky; top:0; z-index:30; background:color-mix(in srgb,var(--bg) 86%,transparent);
+  backdrop-filter:blur(10px); border-bottom:1px solid var(--line)}
+.top-in{display:flex; align-items:center; gap:16px; padding:14px 20px; max-width:1180px; margin:0 auto}
+.brand{display:flex; align-items:center; gap:11px; min-width:0}
+.bolt{width:30px;height:30px;flex:0 0 auto;display:grid;place-items:center;border-radius:8px;
+  background:linear-gradient(160deg,var(--accent),color-mix(in srgb,var(--accent) 55%,#000));
+  box-shadow:0 0 0 1px var(--accent-soft),0 4px 14px -6px var(--accent)}
+.bolt svg{width:17px;height:17px}
+.brand h1{font-size:15px; margin:0; line-height:1.15; letter-spacing:-.01em; font-weight:680}
+.brand p{margin:0; font-size:11.5px; color:var(--ink3); font-family:var(--mono); text-transform:uppercase; letter-spacing:.08em}
+.spacer{flex:1}
+.iconbtn{appearance:none; border:1px solid var(--line); background:var(--panel); color:var(--ink2);
+  width:36px;height:36px;border-radius:9px; cursor:pointer; display:grid; place-items:center; transition:.15s}
+.iconbtn:hover{color:var(--ink); border-color:var(--ink3)}
+.iconbtn svg{width:17px;height:17px}
+
+/* ---------- tabs ---------- */
+.tabs{display:flex; gap:4px; padding:16px 0 0}
+.tab{appearance:none; border:0; background:transparent; cursor:pointer;
+  font-family:var(--sans); font-size:14.5px; font-weight:560; color:var(--ink3);
+  padding:10px 16px 13px; position:relative; display:flex; align-items:center; gap:8px; transition:.15s}
+.tab:hover{color:var(--ink2)}
+.tab[aria-selected="true"]{color:var(--ink)}
+.tab[aria-selected="true"]::after{content:""; position:absolute; left:12px; right:12px; bottom:-1px;
+  height:2.5px; background:var(--accent); border-radius:2px 2px 0 0}
+.tab .cnt{font-family:var(--mono); font-size:11px; color:var(--ink3); background:var(--panel2);
+  border:1px solid var(--line); border-radius:20px; padding:1px 7px}
+.tab.soon{color:var(--ink3); cursor:not-allowed}
+.tab.soon .cnt{color:var(--accent); border-color:var(--accent-soft)}
+.tabline{height:1px; background:var(--line); margin-bottom:4px}
+
+/* ---------- overview ---------- */
+.ov{display:grid; grid-template-columns:1.15fr 1fr; gap:18px; padding:22px 0 8px}
+.tiles{display:grid; grid-template-columns:1fr 1fr; gap:12px; align-content:start}
+.tile{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:15px 16px; box-shadow:var(--shadow)}
+.tile .eyebrow{font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.09em; color:var(--ink3); display:flex; align-items:center; gap:6px}
+.tile .eyebrow::before{content:""; width:6px;height:6px;border-radius:50%; background:var(--accent)}
+.tile .big{font-family:var(--mono); font-size:26px; font-weight:600; letter-spacing:-.02em; margin-top:7px; line-height:1}
+.tile .sub{font-size:12px; color:var(--ink2); margin-top:6px}
+.tile.best .eyebrow::before{background:var(--best)}
+.tile.best .big{color:var(--best)}
+
+.map{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:14px 8px 6px 14px; box-shadow:var(--shadow); position:relative; min-height:230px}
+.map h3{margin:2px 4px 0 2px; font-size:12.5px; color:var(--ink2); font-weight:560; display:flex; align-items:baseline; gap:8px}
+.map h3 .q{font-family:var(--mono); font-size:10.5px; color:var(--ink3); text-transform:uppercase; letter-spacing:.06em}
+.map svg{width:100%; display:block; overflow:visible}
+.map .axlab{font-family:var(--mono); font-size:9.5px; fill:var(--ink3); letter-spacing:.03em}
+.map .grid{stroke:var(--line); stroke-width:1}
+.map .tick{font-family:var(--mono); font-size:9px; fill:var(--ink3)}
+.map .dot{cursor:pointer; transition:r .12s}
+.map .dot:hover{r:7}
+.map .note{font-family:var(--mono); font-size:10px; color:var(--ink3); padding:4px 6px 6px}
+.leg{display:flex; gap:14px; padding:4px 6px 2px; font-size:11px; color:var(--ink2)}
+.leg span{display:inline-flex; align-items:center; gap:6px}
+.leg i{width:9px;height:9px;border-radius:50%; display:inline-block}
+
+/* ---------- controls ---------- */
+.ctrl{position:sticky; top:60px; z-index:20; display:flex; flex-wrap:wrap; gap:9px; align-items:center;
+  padding:12px 0; margin-top:6px; background:color-mix(in srgb,var(--bg) 90%,transparent); backdrop-filter:blur(6px)}
+.field{position:relative; display:flex; align-items:center}
+.field svg{position:absolute; left:10px; width:15px;height:15px; color:var(--ink3); pointer-events:none}
+.search{width:210px; padding:9px 11px 9px 32px}
+input.search,select.sel{appearance:none; font-family:var(--sans); font-size:13.5px; color:var(--ink);
+  background:var(--panel); border:1px solid var(--line); border-radius:9px; outline:none; transition:.15s}
+select.sel{padding:9px 30px 9px 12px; cursor:pointer;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237c8894' stroke-width='2.4'><path d='M6 9l6 6 6-6'/></svg>");
+  background-repeat:no-repeat; background-position:right 9px center; background-size:15px}
+input.search:focus,select.sel:focus{border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft)}
+.check{display:inline-flex; align-items:center; gap:7px; font-size:13px; color:var(--ink2); cursor:pointer;
+  padding:8px 12px; border:1px solid var(--line); border-radius:9px; background:var(--panel); user-select:none; transition:.15s}
+.check:hover{color:var(--ink)}
+.check input{accent-color:var(--accent); width:15px;height:15px; margin:0}
+.check.on{border-color:var(--accent); color:var(--ink)}
+.seg{display:inline-flex; background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:3px; margin-left:auto}
+.seg button{appearance:none; border:0; background:transparent; color:var(--ink3); font-family:var(--sans);
+  font-size:13px; font-weight:540; padding:6px 13px; border-radius:6px; cursor:pointer; display:flex; align-items:center; gap:6px}
+.seg button[aria-pressed="true"]{background:var(--panel); color:var(--ink); box-shadow:var(--shadow)}
+.seg svg{width:14px;height:14px}
+
+/* ---------- groups + cards ---------- */
+.group{margin:20px 0 8px}
+.ghead{display:flex; align-items:center; gap:12px; padding:6px 2px 12px; flex-wrap:wrap}
+.gcap{font-family:var(--mono); font-size:15px; font-weight:600; letter-spacing:-.01em; color:var(--ink);
+  background:var(--panel2); border:1px solid var(--line); padding:4px 11px; border-radius:8px}
+.gmeta{font-size:12.5px; color:var(--ink3)}
+.gbest{margin-left:auto; font-size:12px; color:var(--ink2); display:inline-flex; align-items:center; gap:7px;
+  background:var(--best-soft); border:1px solid color-mix(in srgb,var(--best) 40%,transparent); color:var(--best);
+  padding:4px 10px; border-radius:20px; font-weight:560}
+.gbest b{font-family:var(--mono)}
+.cards{display:grid; grid-template-columns:repeat(auto-fill,minmax(268px,1fr)); gap:13px}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:15px 15px 13px;
+  box-shadow:var(--shadow); display:flex; flex-direction:column; gap:10px; position:relative; transition:.16s; animation:rise .4s both}
+@keyframes rise{from{opacity:0; transform:translateY(6px)}to{opacity:1; transform:none}}
+.card:hover{border-color:var(--ink3)}
+.card.win{border-color:color-mix(in srgb,var(--best) 55%,var(--line)); box-shadow:var(--shadow),0 0 0 1px color-mix(in srgb,var(--best) 45%,transparent)}
+.card .row1{display:flex; align-items:flex-start; gap:8px}
+.bmark{font-size:13px; font-weight:620; color:var(--ink); display:flex; align-items:center; gap:7px; min-width:0}
+.bmark i{width:8px;height:8px;border-radius:50%; background:var(--base); flex:0 0 auto}
+.badge{margin-left:auto; flex:0 0 auto; font-family:var(--mono); font-size:9.5px; text-transform:uppercase; letter-spacing:.05em;
+  padding:3px 7px; border-radius:6px; display:inline-flex; align-items:center; gap:4px; font-weight:600}
+.badge.win{background:var(--best-soft); color:var(--best); border:1px solid color-mix(in srgb,var(--best) 40%,transparent)}
+.badge.orig{background:var(--panel2); color:var(--ink3); border:1px solid var(--line)}
+.model{font-family:var(--mono); font-size:12.5px; color:var(--ink2); word-break:break-word; line-height:1.35; min-height:1.35em}
+.priceline{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap}
+.price{font-family:var(--mono); font-size:23px; font-weight:600; letter-spacing:-.02em; line-height:1}
+.price.na{font-size:15px; color:var(--ink3)}
+.perU{font-family:var(--mono); font-size:12.5px; color:var(--ink2)}
+.perU b{color:var(--ink)}
+.bar{height:7px; border-radius:5px; background:var(--panel2); overflow:hidden; position:relative}
+.bar>span{position:absolute; left:0; top:0; bottom:0; border-radius:5px; background:var(--base); min-width:3px}
+.card.win .bar>span{background:var(--best)}
+.bar.empty{background:repeating-linear-gradient(45deg,var(--panel2),var(--panel2) 5px,transparent 5px,transparent 10px)}
+.specs{display:flex; flex-wrap:wrap; gap:5px; margin-top:1px}
+.chip{font-size:11px; color:var(--ink2); background:var(--panel2); border:1px solid var(--line); border-radius:6px; padding:2px 7px}
+.chip .k{color:var(--ink3)}
+.chip .v{font-family:var(--mono); color:var(--ink)}
+.moremeta{font-size:11.5px; color:var(--ink3); line-height:1.5; border-top:1px dashed var(--line); padding-top:9px; margin-top:1px}
+.moremeta .r{display:flex; gap:6px}
+.moremeta .r span:first-child{color:var(--ink3); flex:0 0 74px}
+.moremeta .r span:last-child{color:var(--ink2)}
+.ds{font-family:var(--mono); font-size:10.5px; color:var(--ink3); display:flex; align-items:center; gap:6px; margin-top:2px}
+.ds svg{width:12px;height:12px; flex:0 0 auto; opacity:.7}
+
+/* ---------- table ---------- */
+.tblwrap{overflow-x:auto; border:1px solid var(--line); border-radius:var(--radius); background:var(--panel); box-shadow:var(--shadow); margin-top:8px}
+table{border-collapse:collapse; width:100%; font-size:13px; min-width:820px}
+th,td{text-align:left; padding:9px 12px; border-bottom:1px solid var(--line); white-space:nowrap}
+th{position:sticky; top:0; background:var(--panel2); color:var(--ink2); font-weight:600; font-size:11.5px;
+  text-transform:uppercase; letter-spacing:.04em; cursor:pointer; user-select:none; z-index:1}
+th:hover{color:var(--ink)}
+th .ar{opacity:.35; font-size:9px; margin-left:3px}
+th.sorted .ar{opacity:1; color:var(--accent)}
+td.n{font-family:var(--mono); font-variant-numeric:tabular-nums}
+tr.win td{background:var(--best-soft)}
+td .dotb{width:7px;height:7px;border-radius:50%;background:var(--base);display:inline-block;margin-right:6px;vertical-align:middle}
+tbody tr:hover td{background:color-mix(in srgb,var(--ink) 4%,transparent)}
+.pill{font-family:var(--mono);font-size:10px;padding:1px 6px;border-radius:5px;background:var(--best-soft);color:var(--best);border:1px solid color-mix(in srgb,var(--best) 35%,transparent)}
+
+/* ---------- solar placeholder ---------- */
+.soon-panel{background:var(--panel); border:1px dashed var(--line); border-radius:var(--radius); padding:34px 26px; text-align:center; margin-top:22px}
+.soon-panel .ic{width:46px;height:46px;margin:0 auto 14px;display:grid;place-items:center;border-radius:12px;background:var(--accent-soft);color:var(--accent)}
+.soon-panel h2{margin:0 0 6px; font-size:19px}
+.soon-panel p{margin:0 auto; max-width:520px; color:var(--ink2); font-size:14px}
+.soon-panel ul{max-width:520px; margin:14px auto 0; text-align:left; color:var(--ink2); font-size:13.5px; padding-left:18px}
+.soon-panel li{margin:5px 0}
+
+.empty{padding:40px; text-align:center; color:var(--ink3); font-size:14px}
+
+/* ---------- tooltip ---------- */
+#tip{position:fixed; z-index:60; pointer-events:none; background:var(--panel); border:1px solid var(--line);
+  border-radius:9px; box-shadow:var(--shadow); padding:9px 11px; font-size:12px; opacity:0; transition:opacity .1s; max-width:230px}
+#tip .t{font-weight:640; margin-bottom:2px}
+#tip .m{font-family:var(--mono); font-size:11px; color:var(--ink2); line-height:1.5}
+#tip b{color:var(--best); font-family:var(--mono)}
+
+/* ---------- footer ---------- */
+footer{border-top:1px solid var(--line); margin-top:40px; padding:22px 0 46px; color:var(--ink3); font-size:12px}
+footer .cols{display:flex; gap:26px; flex-wrap:wrap}
+footer code{font-family:var(--mono); background:var(--panel2); border:1px solid var(--line); padding:1px 5px; border-radius:4px; color:var(--ink2)}
+footer b{color:var(--ink2)}
+
+@media (max-width:820px){
+  .ov{grid-template-columns:1fr}
+  .ctrl{top:56px}
+  .search{width:100%}
+  .field:first-child{flex:1 1 100%}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <div class="brand">
+      <div class="bolt"><svg viewBox="0 0 24 24" fill="#1a1206"><path d="M13 2L4.5 13.5H11l-1 8.5L19.5 10H13z"/></svg></div>
+      <div>
+        <h1>Matriz de Respaldo Eléctrico</h1>
+        <p>Inversores · Baterías · Costo-beneficio</p>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <button class="iconbtn" id="theme" title="Cambiar tema" aria-label="Cambiar tema">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="themeic"></svg>
+    </button>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" data-tab="bat" aria-selected="true">Baterías <span class="cnt" id="cbat"></span></button>
+    <button class="tab" role="tab" data-tab="inv" aria-selected="false">Inversores <span class="cnt" id="cinv"></span></button>
+    <button class="tab soon" role="tab" data-tab="sol" aria-selected="false" tabindex="-1">Paneles solares <span class="cnt">próximamente</span></button>
+  </div>
+  <div class="tabline"></div>
+
+  <section id="overview"></section>
+
+  <div class="ctrl" id="controls">
+    <label class="field">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+      <input class="search" id="q" type="search" placeholder="Buscar modelo o marca…" autocomplete="off">
+    </label>
+    <select class="sel" id="fbrand"><option value="">Todas las marcas</option></select>
+    <select class="sel" id="forigin">
+      <option value="">Todo origen</option>
+      <option value="Venezuela">Venezuela</option>
+      <option value="China">China</option>
+      <option value="—">Sin dato</option>
+    </select>
+    <select class="sel" id="sort">
+      <option value="value">Mejor costo-beneficio</option>
+      <option value="plow">Precio: menor primero</option>
+      <option value="phigh">Precio: mayor primero</option>
+      <option value="cap">Capacidad</option>
+      <option value="brand">Marca</option>
+    </select>
+    <label class="check" id="oplbl"><input type="checkbox" id="onlyp"> Solo con precio</label>
+    <div class="seg" role="group" aria-label="Vista">
+      <button id="vcards" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Tarjetas</button>
+      <button id="vtable" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5h18M3 12h18M3 19h18"/></svg>Tabla</button>
+    </div>
+  </div>
+
+  <section id="content"></section>
+</main>
+
+<div id="tip" role="tooltip"></div>
+
+<footer class="wrap">
+  <div class="cols">
+    <div style="flex:1 1 320px">
+      <b>Fuente</b> · Datos extraídos de los datasheets recopilados por el departamento (<span id="nds"></span>).
+      El origen (Venezuela/China) proviene de la leyenda de la hoja y aplica solo a marcas listadas ahí; el resto va como
+      «sin dato». Los precios marcados <span class="pill" style="color:var(--ink3);background:var(--panel2);border-color:var(--line)">Cotizar</span> no venían en la matriz.
+    </div>
+    <div style="flex:1 1 300px">
+      <b>Para añadir equipos</b> · abre este archivo en un editor y agrega un objeto al arreglo
+      <code>DATA.batteries</code> o <code>DATA.inverters</code> dentro de <code>&lt;script&gt;</code>. Hay una plantilla comentada
+      («PLANTILLA»). El resto (agrupación, ranking y barras) se recalcula solo.
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ============================================================
+   DATOS — editar aquí para escalar la matriz.
+   Cada equipo es un objeto. Para AÑADIR uno nuevo, copia la
+   PLANTILLA del bloque correspondiente y rellena los campos.
+   Precio: número en USD, o null si hay que cotizar.
+   ------------------------------------------------------------
+   PLANTILLA batería:
+     {marca:"", modelo:"", kwh:0, precio:null, va:"", descarga:"",
+      garantia:"", quimica:"LiFePO4", ciclos:"", dim:"", peso:"",
+      origen:"—", datasheet:""}
+   PLANTILLA inversor:
+     {marca:"", modelo:"", kw:0, kva:0, band:"5–6 kW", precio:null,
+      tipo:"", vac:"", carga_red:"", vdc:"", fase:"", pico:"",
+      transfer:"", garantia:"", efic:"", dim:"", peso:"",
+      origen:"—", datasheet:""}
+   ============================================================ */
+const DATA = {
+ "inverters": [
+  {
+   "_id": "i0",
+   "marca": "Victron",
+   "modelo": "Inversor/cargador híbrido · MPPT externo",
+   "kw": 1.0,
+   "kva": 1.2,
+   "band": "1–2 kW",
+   "precio": 645.59,
+   "vac": "120V",
+   "vdc": "12V",
+   "carga_red": "50A",
+   "pico": "2.4 kW (2400W)",
+   "transfer": "< 20 ms",
+   "garantia": "5 años",
+   "efic": "93% de eficiencia máxima.",
+   "fase": "Monofásico (Single-Phase)",
+   "paralelismo": "SI, Hatas 6 unidades (Consultar con el Vendor)",
+   "dim": "37.5 x 21.4 x 11.0",
+   "peso": "8.2",
+   "origen": "Venezuela",
+   "datasheet": "Datasheet-MultiPlus-2000VA-120V-ES.pdf"
+  },
+  {
+   "_id": "i1",
+   "marca": "Victron",
+   "modelo": "Inversor/cargador híbrido · MPPT externo",
+   "kw": 1.6,
+   "kva": 2.0,
+   "band": "1–2 kW",
+   "precio": 1088.91,
+   "vac": "120V",
+   "vdc": "24V",
+   "carga_red": "50A",
+   "pico": "4 kW (4000W)",
+   "transfer": "< 20 ms",
+   "garantia": "5 años",
+   "efic": "94% de eficiencia máxima.",
+   "fase": "Monofásico (Single-Phase)",
+   "paralelismo": "SI, Hatas 6 unidades (Consultar con el Vendor)",
+   "dim": "52.0 x 25.5 x 12.5",
+   "peso": "11.7",
+   "origen": "Venezuela",
+   "datasheet": "Datasheet-MultiPlus-2000VA-120V-ES.pdf"
+  },
+  {
+   "_id": "i2",
+   "marca": "Victron",
+   "modelo": "Inversor/cargador híbrido · MPPT externo",
+   "kw": 1.6,
+   "kva": 2.0,
+   "band": "1–2 kW",
+   "precio": 746.17,
+   "vac": "120V",
+   "vdc": "48V",
+   "carga_red": "25A",
+   "pico": "4 kW (4000W)",
+   "transfer": "< 20 ms",
+   "garantia": "5 años",
+   "efic": "95% de eficiencia máxima.",
+   "fase": "Monofásico (Single-Phase)",
+   "paralelismo": "SI, Hatas 6 unidades (Consultar con el Vendor)",
+   "dim": "52.0 x 25.5 x 12.5",
+   "peso": "11.7",
+   "origen": "Venezuela",
+   "datasheet": "Datasheet-MultiPlus-2000VA-120V-ES.pdf"
+  },
+  {
+   "_id": "i3",
+   "marca": "Rarlon",
+   "modelo": "Inversor híbrido Off-Grid",
+   "kw": 1.2,
+   "kva": 1.5,
+   "band": "1–2 kW",
+   "precio": null,
+   "vac": "220V /230V /240V",
+   "vdc": "12V",
+   "carga_red": "50A",
+   "pico": "2.4KVA",
+   "transfer": "10ms",
+   "garantia": "2 años",
+   "efic": "",
+   "fase": "Monofásico (Single-Phase)",
+   "paralelismo": "NO",
+   "dim": "30 x 24 x 10.2",
+   "peso": "3.5",
+   "origen": "China",
+   "datasheet": "XINXIN ENERGY.pdf"
+  },
+  {
+   "_id": "i4",
+   "marca": "SRNE",
+   "modelo": "Inversor híbrido Off-Grid",
+   "kw": 3.0,
+   "kva": 3.8,
+   "band": "3–4 kW",
+   "precio": 660.69,
+   "vac": "120V",
+   "vdc": "24V",
+   "carga_red": "30A ~ 40A (Consultar con el vendedor)",
+   "pico": "6 kW (6000W)",
+   "transfer": "10ms",
+   "garantia": "2 años",
+   "efic": "",
+   "fase": "Monofásico (Single-Phase)",
+   "paralelismo": "NO",
+   "dim": "37.8 x 28.0 x 10.3",
+   "peso": "6.9",
+   "origen": "Venezuela",
+   "datasheet": "Link de instagram"
+  },
+  {
+   "_id": "i5",
+   "marca": "Rarlon",
+   "modelo": "Inversor híbrido Off-Grid",
+   "kw": 3.6,
+   "kva": 4.5,
+   "band": "3–4 kW",
+   "precio": null,
+   "vac": "220V /230V /240V",
+   "vdc": "24V",
+   "carga_red": "100A",
+   "pico": "7KVA",
+   "transfer": "10ms",
+   "garantia": "2 años",
+   "efic": "",
+   "fase": "Monofásico (Single-Phase)",
+   "paralelismo": "NO",
+   "dim": "42 x 31.5 x 11",
+   "peso": "6.2",
+   "origen": "China",
+   "datasheet": "XINXIN ENERGY.pdf"
+  },
+  {
+   "_id": "i6",
+   "marca": "Victron",
+   "modelo": "Inversor/cargador híbrido · MPPT externo",
+   "kw": 4.0,
+   "kva": 5.0,
+   "band": "3–4 kW",
+   "precio": 1284.42,
+   "vac": "120V",
+   "vdc": "48V",
+   "carga_red": "70A",
+   "pico": "9 kW (9000W) / 9 KVA",
+   "transfer": "< 20 ms",
+   "garantia": "5 años (Consultar con el vendedor)",
+   "efic": "96% de eficiencia máxima.",
+   "fase": "Monofásico (Single-Phase)",
+   "paralelismo": "SI, Hatas 6 unidades (Consultar con el Vendor)",
+   "dim": "56.5 x 32.3 x 14.9",
+   "peso": "30",
+   "origen": "Venezuela",
+   "datasheet": "Datasheet-MultiPlus-II-120Va-ES.pdf"
+  },
+  {
+   "_id": "i7",
+   "marca": "SRNE",
+   "modelo": "Inversor híbrido Off-Grid",
+   "kw": 5.0,
+   "kva": 6.2,
+   "band": "5–6 kW",
+   "precio": 1022.2,
+   "vac": "120V",
+   "vdc": "48 V",
+   "carga_red": "60A",
+   "pico": "10 kW (10000W)",
+   "transfer": "10 ms (modo UPS) / 20 ms (modo APL)",
+   "garantia": "2 años (Consultar con el vendedor)",
+   "efic": "",
+   "fase": "Monofásico (Single-Phase)",
+   "paralelismo": "SÍ, permite conectar hasta 6 unidades en paralelo.",
+   "dim": "42.6 x 32.2 x 12.6",
+   "peso": "10.9",
+   "origen": "Venezuela",
+   "datasheet": "Link de instagram"
+  },
+  {
+   "_id": "i8",
+   "marca": "Amiba",
+   "modelo": "Inversor híbrido Off-Grid",
+   "kw": 5.0,
+   "kva": 6.2,
+   "band": "5–6 kW",
+   "precio": 400.0,
+   "vac": "120 VAC ± 5%",
+   "vdc": "48 V",
+   "carga_red": "50A",
+   "pico": "7 kW",
+   "transfer": "10ms",
+   "garantia": "10 años",
+   "efic": "",
+   "fase": "Monofásico (Single-Phase)",
+   "paralelismo": "NO",
+   "dim": "30 × 10.5 × 36.3",
+   "peso": "8.4",
+   "origen": "China",
+   "datasheet": "inversorAmiba5kw.pdf"
+  },
+  {
+   "_id": "i9",
+   "marca": "Rarlon",
+   "modelo": "Inversor híbrido Off-Grid",
+   "kw": 6.0,
+   "kva": 7.5,
+   "band": "5–6 kW",
+   "precio": null,
+   "vac": "220 / 230 / 240 VAC",
+   "vdc": "48 V",
+   "carga_red": "120A",
+   "pico": "12 kVA",
+   "transfer": "10ms",
+   "garantia": "2 años",
+   "efic": "",
+   "fase": "Monofásico (Single-Phase)",
+   "paralelismo": "SÍ, soporta hasta 9 unidades en paralelo",
+   "dim": "48 x 35.5 x 12",
+   "peso": "8.4",
+   "origen": "China",
+   "datasheet": "inversorAmiba5kw.pdf"
+  },
+  {
+   "_id": "i10",
+   "marca": "SRNE",
+   "modelo": "Inversor híbrido Off-Grid",
+   "kw": 6.5,
+   "kva": 8.1,
+   "band": "5–6 kW",
+   "precio": 1374.0,
+   "vac": "120 / 240 VAC (Split-Phase)",
+   "vdc": "48 V",
+   "carga_red": "40A ~ 60A (puede ser mayor, consultar con el vendedor)",
+   "pico": "13 kW (13000W)",
+   "transfer": "10ms",
+   "garantia": "2 años",
+   "efic": "",
+   "fase": "Fase partida / Bifásico ( Split-Phase)",
+   "paralelismo": "SÍ, soporta hasta 6 unidades en paralelo",
+   "dim": "50.0 x38.0 x 13.0",
+   "peso": "15.5",
+   "origen": "Venezuela",
+   "datasheet": "SRNE_6KW.pdf"
+  },
+  {
+   "_id": "i11",
+   "marca": "Amiba",
+   "modelo": "Inversor híbrido Off-Grid",
+   "kw": 6.2,
+   "kva": 7.8,
+   "band": "5–6 kW",
+   "precio": 480.0,
+   "vac": "115/230 VAC ± 5%",
+   "vdc": "48 V",
+   "carga_red": "65A",
+   "pico": "8.8 kW (8800W)",
+   "transfer": "10ms",
+   "garantia": "10 años",
+   "efic": "",
+   "fase": "Fase partida / Bifásico ( Split-Phase)",
+   "paralelismo": "NO",
+   "dim": "30 × 10.5 × 37.3",
+   "peso": "10",
+   "origen": "China",
+   "datasheet": "inversorAmiba6.2kw.jpeg.pdf"
+  },
+  {
+   "_id": "i12",
+   "marca": "Amiba",
+   "modelo": "Inversor híbrido Off-Grid",
+   "kw": 10.2,
+   "kva": 12.7,
+   "band": "10–12 kW",
+   "precio": 800.0,
+   "vac": "115/230 VAC ± 5%",
+   "vdc": "48 V",
+   "carga_red": "100 A",
+   "pico": "14 kW (14000W)",
+   "transfer": "10ms",
+   "garantia": "10 años",
+   "efic": "",
+   "fase": "Fase partida / Bifásico ( Split-Phase)",
+   "paralelismo": "NO",
+   "dim": "36 × 120 × 50",
+   "peso": "14.5",
+   "origen": "China",
+   "datasheet": "InversorAmiba10.2kw.pdf"
+  },
+  {
+   "_id": "i13",
+   "marca": "Amiba",
+   "modelo": "Inversor híbrido Off-Grid",
+   "kw": 12.0,
+   "kva": 15.0,
+   "band": "10–12 kW",
+   "precio": 890.0,
+   "vac": "115/230 VAC ± 5%",
+   "vdc": "48 V",
+   "carga_red": "100 A",
+   "pico": "15 kW (15000W)",
+   "transfer": "10ms",
+   "garantia": "10 años",
+   "efic": "",
+   "fase": "Fase partida / Bifásico ( Split-Phase)",
+   "paralelismo": "NO",
+   "dim": "36 × 120 × 50",
+   "peso": "14.5",
+   "origen": "China",
+   "datasheet": "InversorAmiba10.2kw.pdf"
+  },
+  {
+   "_id": "i14",
+   "marca": "Rarlon",
+   "modelo": "Inversor híbrido Off-Grid",
+   "kw": 12.0,
+   "kva": 15.0,
+   "band": "10–12 kW",
+   "precio": null,
+   "vac": "220 / 230 / 240 VAC",
+   "vdc": "48 V",
+   "carga_red": "160A",
+   "pico": "24 kVA",
+   "transfer": "10ms",
+   "garantia": "2 años",
+   "efic": "",
+   "fase": "Monofásico (Single-Phase)",
+   "paralelismo": "SI, pero no se especifica la cantidad",
+   "dim": "52 x 41.5 x 14",
+   "peso": "15",
+   "origen": "China",
+   "datasheet": "XINXIN ENERGY.pdf"
+  }
+ ],
+ "batteries": [
+  {
+   "_id": "b0",
+   "marca": "Improve",
+   "modelo": "IMP12-100-BL",
+   "kwh": 1.28,
+   "grupo": "1.28 KWh",
+   "precio": 336.85,
+   "va": "12.8V / 100Ah",
+   "descarga": "100A",
+   "garantia": "2 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "3.000 a 4.000 ciclos completos descargando al 80% (DOD)",
+   "dim": "32.8 x 17.2 x 21.5",
+   "peso": "11.5",
+   "origen": "—",
+   "datasheet": "Improve 24V 200Ah (Bluetooth-LCD).pdf"
+  },
+  {
+   "_id": "b1",
+   "marca": "Improve",
+   "modelo": "IMP24-100-BL",
+   "kwh": 2.56,
+   "grupo": "2.5 KWh",
+   "precio": 623.69,
+   "va": "25.6V / 100Ah",
+   "descarga": "100A",
+   "garantia": "2 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "3.000 a 4.000 ciclos completos descargando al 80% (DOD)",
+   "dim": "48.3 x 17.0 x 24.0",
+   "peso": "21",
+   "origen": "—",
+   "datasheet": "Improve 24V 200Ah (Bluetooth-LCD).pdf"
+  },
+  {
+   "_id": "b2",
+   "marca": "Rarlon",
+   "modelo": "XX-C-BM-100HW 1P8S-A01",
+   "kwh": 2.5,
+   "grupo": "2.5 KWh",
+   "precio": null,
+   "va": "25.6V / 100Ah",
+   "descarga": "100A",
+   "garantia": "5 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "6.000 ciclos al 80% DoD (Profundidad de descarga) a 25°C.",
+   "dim": "33.0 x 14.6 x 47.5",
+   "peso": "31",
+   "origen": "China",
+   "datasheet": "XINXIN ENERGY.pdf"
+  },
+  {
+   "_id": "b3",
+   "marca": "Sunc Solar",
+   "modelo": "SCAE-A-25.6-100",
+   "kwh": 2.5,
+   "grupo": "2.5 KWh",
+   "precio": 305.0,
+   "va": "25.6V / 100Ah",
+   "descarga": "100A",
+   "garantia": "5 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "6.000 ciclos al 80% DoD (Profundidad de descarga)",
+   "dim": "36 x 19.5 x 42",
+   "peso": "34.5",
+   "origen": "—",
+   "datasheet": "SunC ESS catalog 2026.pdf"
+  },
+  {
+   "_id": "b4",
+   "marca": "Improve",
+   "modelo": "IMP24-200-BL",
+   "kwh": 5.12,
+   "grupo": "5 KWh",
+   "precio": 1177.8,
+   "va": "25.6V / 200Ah",
+   "descarga": "150A ~ 200A (Consultar con el vendedor)",
+   "garantia": "2 años",
+   "quimica": "Batería LiFePO4/ Celdas Prismáticas",
+   "ciclos": "mayor o igual 3000 a 4000 ciclos al 80% DoD (Profundidad de descarga)",
+   "dim": "52.2 x 24.0 x 21.8",
+   "peso": "36.5",
+   "origen": "—",
+   "datasheet": "Improve 24V 200Ah (Bluetooth-LCD).pdf"
+  },
+  {
+   "_id": "b5",
+   "marca": "Improve",
+   "modelo": "IMP51.2-100R",
+   "kwh": 5.12,
+   "grupo": "5 KWh",
+   "precio": 1337.31,
+   "va": "51.2V / 100Ah",
+   "descarga": "100A",
+   "garantia": "2 años",
+   "quimica": "Batería LiFePO4/ Celdas Prismáticas",
+   "ciclos": "6.000 ciclos al 80% DoD (Profundidad de descarga)",
+   "dim": "44.2 x 48.0 x 13.3",
+   "peso": "41.5",
+   "origen": "—",
+   "datasheet": "Link de instagram"
+  },
+  {
+   "_id": "b6",
+   "marca": "BSLbatt",
+   "modelo": "B-LFP48-100E",
+   "kwh": 5.12,
+   "grupo": "5 KWh",
+   "precio": 1490.5,
+   "va": "51.2V / 100Ah",
+   "descarga": "100A",
+   "garantia": "5 años",
+   "quimica": "Batería LiFePO4/ Celdas Prismáticas",
+   "ciclos": "6.000 ciclos al 80% DoD (Profundidad de descarga)",
+   "dim": "40.5 x 18.5 x 58",
+   "peso": "43",
+   "origen": "—",
+   "datasheet": "Link de instagram"
+  },
+  {
+   "_id": "b7",
+   "marca": "Sunc Solar",
+   "modelo": "SCAE-A-25.6-100",
+   "kwh": 5.12,
+   "grupo": "5 KWh",
+   "precio": 526.0,
+   "va": "25.6V / 200Ah",
+   "descarga": "100A",
+   "garantia": "5 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "6.000 ciclos al 80% DoD (Profundidad de descarga)",
+   "dim": "$44.2 x 52.0 x 17.7",
+   "peso": "No especificado",
+   "origen": "—",
+   "datasheet": "SunC ESS catalog 2026.pdf"
+  },
+  {
+   "_id": "b8",
+   "marca": "Sunc Solar",
+   "modelo": "SCAE-A-51.2-100",
+   "kwh": 5.12,
+   "grupo": "5 KWh",
+   "precio": 526.0,
+   "va": "51.2V / 100Ah",
+   "descarga": "100A",
+   "garantia": "5 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "6.000 ciclos al 80% DoD (Profundidad de descarga)",
+   "dim": "40.5 x 18.5 x 58",
+   "peso": "No especificado",
+   "origen": "—",
+   "datasheet": "SunC ESS catalog 2026.pdf"
+  },
+  {
+   "_id": "b9",
+   "marca": "Rarlon",
+   "modelo": "XX-C-BM-100HW 1P16S-A02",
+   "kwh": 5.12,
+   "grupo": "5 KWh",
+   "precio": null,
+   "va": "51.2V / 100Ah",
+   "descarga": "100A",
+   "garantia": "5 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "6.000 ciclos al 80% DoD (Profundidad de descarga) a 25°C.",
+   "dim": "76.5 x 15.0 x 43.0",
+   "peso": "51",
+   "origen": "China",
+   "datasheet": "XINXIN ENERGY.pdf"
+  },
+  {
+   "_id": "b10",
+   "marca": "Rarlon",
+   "modelo": "XX-A1-48100",
+   "kwh": 5.12,
+   "grupo": "5 KWh",
+   "precio": null,
+   "va": "51.2V / 100Ah",
+   "descarga": "100A",
+   "garantia": "5 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "6.000 ciclos al 80% DoD (Profundidad de descarga) a 25°C.",
+   "dim": "50.0 x 48.0 x 19.5",
+   "peso": "44.8",
+   "origen": "China",
+   "datasheet": "XINXIN ENERGY.pdf"
+  },
+  {
+   "_id": "b11",
+   "marca": "Trifusion Power",
+   "modelo": "AL-WM512100",
+   "kwh": 5.12,
+   "grupo": "5 KWh",
+   "precio": 610.0,
+   "va": "51.2V / 100Ah",
+   "descarga": "100Ah",
+   "garantia": "5 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "60000",
+   "dim": "60.15 x 40.0 x 15.5",
+   "peso": "49",
+   "origen": "—",
+   "datasheet": "Link de instagram"
+  },
+  {
+   "_id": "b12",
+   "marca": "Amiba",
+   "modelo": "HES05WT",
+   "kwh": 5.12,
+   "grupo": "5 KWh",
+   "precio": 1180.0,
+   "va": "51.2V / 100Ah",
+   "descarga": "100A",
+   "garantia": "10 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "> 5.000 ciclos al 95% DoD (Profundidad de descarga) a 25°C. \"",
+   "dim": "42.0 x 59.0 x 18.0",
+   "peso": "47.1",
+   "origen": "China",
+   "datasheet": "Link de instagram"
+  },
+  {
+   "_id": "b13",
+   "marca": "Rarlon",
+   "modelo": "XX-W1-48100",
+   "kwh": 7.5,
+   "grupo": "7.5 KWh",
+   "precio": null,
+   "va": "51.2V / 150Ah",
+   "descarga": "150A",
+   "garantia": "5 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "6.000 ciclos a un 80% de DOD",
+   "dim": "114.5 x 57.4 x 11.9",
+   "peso": "75",
+   "origen": "China",
+   "datasheet": "XINXIN ENERGY.pdf"
+  },
+  {
+   "_id": "b14",
+   "marca": "Rarlon",
+   "modelo": "XX-C-BM-280HW 1P8S-A01",
+   "kwh": 8.0,
+   "grupo": "8 KWh",
+   "precio": null,
+   "va": "25.6V / 314Ah",
+   "descarga": "200A",
+   "garantia": "5 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "10.000 ciclos a un 80% de DOD",
+   "dim": "43.2 x 24.4 x 63.7",
+   "peso": "76",
+   "origen": "China",
+   "datasheet": "XINXIN ENERGY.pdf"
+  },
+  {
+   "_id": "b15",
+   "marca": "Sunc Solar",
+   "modelo": "SCAE-A-51.2-200 (BMS 100A)",
+   "kwh": 10.0,
+   "grupo": "10 KWh",
+   "precio": 899.0,
+   "va": "51.2V / 200Ah",
+   "descarga": "100A",
+   "garantia": "5 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "6.000 ciclos a un 80% de DOD",
+   "dim": "43.5 x 28 x63",
+   "peso": "--",
+   "origen": "—",
+   "datasheet": "SunC ESS catalog 2026.pdf"
+  },
+  {
+   "_id": "b16",
+   "marca": "Sunc Solar",
+   "modelo": "SCAE-A-51.2-200 (BMS 200A)",
+   "kwh": 10.0,
+   "grupo": "10 KWh",
+   "precio": 938.0,
+   "va": "51.2V / 200Ah",
+   "descarga": "200A",
+   "garantia": "5 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "6.000 ciclos a un 80% de DOD",
+   "dim": "43.5 x 28 x63",
+   "peso": "--",
+   "origen": "—",
+   "datasheet": "SunC ESS catalog 2026.pdf"
+  },
+  {
+   "_id": "b17",
+   "marca": "Rarlon",
+   "modelo": "XX-C-BM-200HW 1P16S-A01",
+   "kwh": 10.0,
+   "grupo": "10 KWh",
+   "precio": null,
+   "va": "51.2V / 200Ah",
+   "descarga": "200A",
+   "garantia": "5 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "8.000 ciclos a un 80% de DOD",
+   "dim": "50.0 x 25.0 x 91.5",
+   "peso": "89",
+   "origen": "China",
+   "datasheet": "XINXIN ENERGY.pdf"
+  },
+  {
+   "_id": "b18",
+   "marca": "Rarlon",
+   "modelo": "XX-A3-48200",
+   "kwh": 10.0,
+   "grupo": "10 KWh",
+   "precio": null,
+   "va": "51.2V / 200Ah",
+   "descarga": "200A",
+   "garantia": "5 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "8.000 ciclos a un 80% de DOD",
+   "dim": "50 x 25 x 91",
+   "peso": "89",
+   "origen": "China",
+   "datasheet": "XINXIN ENERGY.pdf"
+  },
+  {
+   "_id": "b19",
+   "marca": "Trifusion Power",
+   "modelo": "AL-WM512200",
+   "kwh": 10.0,
+   "grupo": "10 KWh",
+   "precio": 1049.0,
+   "va": "51.2V / 200Ah",
+   "descarga": "200A",
+   "garantia": "5 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "6000",
+   "dim": "65.15 x 44.5 x 23.5",
+   "peso": "87",
+   "origen": "—",
+   "datasheet": "Link de instagram"
+  },
+  {
+   "_id": "b20",
+   "marca": "Amiba",
+   "modelo": "HES10WT",
+   "kwh": 10.0,
+   "grupo": "10 KWh",
+   "precio": 1080.0,
+   "va": "51.2V / 200Ah",
+   "descarga": "200A",
+   "garantia": "10 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "> 6.000 ciclos al 95% DoD (Profundidad de descarga) a 25°C.",
+   "dim": "63.0 x 46.0 x 26.0",
+   "peso": "86",
+   "origen": "China",
+   "datasheet": "Link de instagram"
+  },
+  {
+   "_id": "b21",
+   "marca": "Sunc Solar",
+   "modelo": "SCAE-B-51.2-300",
+   "kwh": 15.0,
+   "grupo": "15 KWh",
+   "precio": 1090.0,
+   "va": "51.2V / 300Ah",
+   "descarga": "200A",
+   "garantia": "5 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "8.000 ciclos a un 80% de DOD",
+   "dim": "48.5 × 26 × 77",
+   "peso": "111.65",
+   "origen": "—",
+   "datasheet": "SunC ESS catalog 2026.pdf"
+  },
+  {
+   "_id": "b22",
+   "marca": "Rarlon",
+   "modelo": "XX-A5-48300",
+   "kwh": 15.0,
+   "grupo": "15 KWh",
+   "precio": null,
+   "va": "51.2V / 300Ah",
+   "descarga": "200A",
+   "garantia": "5 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "10.000 ciclos a un 80% de DOD",
+   "dim": "44 x 30 x 92.5",
+   "peso": "124",
+   "origen": "China",
+   "datasheet": "XINXIN ENERGY.pdf"
+  },
+  {
+   "_id": "b23",
+   "marca": "Trifusion Power",
+   "modelo": "AL-WM512300",
+   "kwh": 15.0,
+   "grupo": "15 KWh",
+   "precio": 1155.0,
+   "va": "51.2V / 300Ah",
+   "descarga": "200A",
+   "garantia": "5 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "8.000 y 10.000 ciclos a un 75% de DOD",
+   "dim": "74.0 x 57.0 x 42.0 (Carton size)",
+   "peso": "129",
+   "origen": "—",
+   "datasheet": "Trifusion Power.pdf"
+  },
+  {
+   "_id": "b24",
+   "marca": "Amiba",
+   "modelo": "HES15WT",
+   "kwh": 15.0,
+   "grupo": "15 KWh",
+   "precio": 1180.0,
+   "va": "51.2V / 280Ah",
+   "descarga": "200A",
+   "garantia": "10 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "> 8.000 ciclos al 95% DoD (Profundidad de descarga) a 25°C.",
+   "dim": "83.0 x46.0 x 29.0",
+   "peso": "117",
+   "origen": "China",
+   "datasheet": "Trifusion Power.pdf"
+  },
+  {
+   "_id": "b25",
+   "marca": "Rarlon",
+   "modelo": "XX-A4-48314",
+   "kwh": 16.0,
+   "grupo": "16 KWh",
+   "precio": null,
+   "va": "51.2V / 314Ah",
+   "descarga": "200A",
+   "garantia": "5 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "10.000 ciclos a un 80% de DOD",
+   "dim": "40 x 30 x 97",
+   "peso": "123",
+   "origen": "China",
+   "datasheet": "XINXIN ENERGY.pdf"
+  },
+  {
+   "_id": "b26",
+   "marca": "Trifusion Power",
+   "modelo": "AL-WM512314",
+   "kwh": 16.0,
+   "grupo": "16 KWh",
+   "precio": 1277.0,
+   "va": "51.2V / 330Ah",
+   "descarga": "200A",
+   "garantia": "5 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "6.000 ciclos a un 90% de DOD 10.000 ciclos a un 80% de DOD",
+   "dim": "88.87 x 50.0 x 42.0",
+   "peso": "134",
+   "origen": "—",
+   "datasheet": "16度电规格书（英文中性）.pdf"
+  },
+  {
+   "_id": "b27",
+   "marca": "Amiba",
+   "modelo": "HES16WT",
+   "kwh": 16.0,
+   "grupo": "16 KWh",
+   "precio": 1380.0,
+   "va": "51.2V / 314Ah",
+   "descarga": "200A",
+   "garantia": "10 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "8.000 ciclos a un 95% de DOD",
+   "dim": "83 x 46 x 29",
+   "peso": "128",
+   "origen": "China",
+   "datasheet": "HES16WT.pdf"
+  },
+  {
+   "_id": "b28",
+   "marca": "Sunc Solar",
+   "modelo": "SCAE-B-51.2-335",
+   "kwh": 17.0,
+   "grupo": "17 KWh",
+   "precio": 1161.0,
+   "va": "51.2V / 335Ah",
+   "descarga": "200A",
+   "garantia": "5 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "8.000 ciclos a un 80% de DOD",
+   "dim": "48.5 × 26 × 77",
+   "peso": "---",
+   "origen": "—",
+   "datasheet": "SunC ESS catalog 2026.pdf"
+  },
+  {
+   "_id": "b29",
+   "marca": "Trifusion Power",
+   "modelo": "AL-WM512346",
+   "kwh": 18.0,
+   "grupo": "18 KWh",
+   "precio": 1279.0,
+   "va": "51.2V / 346Ah",
+   "descarga": "200A",
+   "garantia": "5 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "8.000 y 10.000 ciclos a un 75% de DOD",
+   "dim": "74.0 x 57.0 x 42.0 (Carton size)",
+   "peso": "132.2",
+   "origen": "—",
+   "datasheet": "Trifusion Power.pdf"
+  },
+  {
+   "_id": "b30",
+   "marca": "Rarlon",
+   "modelo": "XX-CBM-400HW 1P16S A01",
+   "kwh": 20.0,
+   "grupo": "20 KWh",
+   "precio": 1276.0,
+   "va": "51.2V / 400Ah",
+   "descarga": "200A",
+   "garantia": "5 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "10.000 ciclos a un 80% de DOD",
+   "dim": "10.85 x 29.9 x 57.2",
+   "peso": "175.6",
+   "origen": "China",
+   "datasheet": "XINXIN ENERGY.pdf"
+  },
+  {
+   "_id": "b31",
+   "marca": "Sunc Solar",
+   "modelo": "SCAE-B-51.2-600 (BMS 200A)",
+   "kwh": 30.0,
+   "grupo": "30 KWh",
+   "precio": 2060.0,
+   "va": "51.2V / 600Ah",
+   "descarga": "200A",
+   "garantia": "5 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "8.000 ciclos a un 80% de DOD",
+   "dim": "81 × 40 × 75.5",
+   "peso": "---",
+   "origen": "—",
+   "datasheet": "SunC ESS catalog 2026.pdf"
+  },
+  {
+   "_id": "b32",
+   "marca": "Sunc Solar",
+   "modelo": "SCAE-B-51.2-600 (BMS 300A)",
+   "kwh": 30.0,
+   "grupo": "30 KWh",
+   "precio": 2122.0,
+   "va": "51.2V / 600Ah",
+   "descarga": "300A",
+   "garantia": "5 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "8.000 ciclos a un 80% de DOD",
+   "dim": "81 × 40 × 75.5",
+   "peso": "---",
+   "origen": "—",
+   "datasheet": "SunC ESS catalog 2026.pdf"
+  },
+  {
+   "_id": "b33",
+   "marca": "Rarlon",
+   "modelo": "SCAE-B-51.2-600 (BMS 300A)",
+   "kwh": 32.0,
+   "grupo": "32 KWh",
+   "precio": null,
+   "va": "51.2V / 628Ah",
+   "descarga": "200A",
+   "garantia": "5 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "10.000 ciclos a un 80% de DOD",
+   "dim": "40 x 73.5 x 83.5",
+   "peso": "238.2",
+   "origen": "China",
+   "datasheet": "XINXIN ENERGY.pdf"
+  },
+  {
+   "_id": "b34",
+   "marca": "Trifusion Power",
+   "modelo": "AL-WM512628",
+   "kwh": 32.0,
+   "grupo": "32 KWh",
+   "precio": 2289.0,
+   "va": "51.2V / 628Ah",
+   "descarga": "200A",
+   "garantia": "5 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "6.000 ciclos a un 90% de DOD 10.000 ciclos a un 80% de DOD",
+   "dim": "75.0 x 45.0 x 75.5 (Carton size)",
+   "peso": "210",
+   "origen": "—",
+   "datasheet": "Trifusion Power.pdf"
+  },
+  {
+   "_id": "b35",
+   "marca": "Amiba",
+   "modelo": "HES32FT",
+   "kwh": 32.0,
+   "grupo": "32 KWh",
+   "precio": 2450.0,
+   "va": "51.2V / 628Ah",
+   "descarga": "200A",
+   "garantia": "10 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "8.000 ciclos a un 95% de DOD",
+   "dim": "68 x 63 x 103",
+   "peso": "245",
+   "origen": "China",
+   "datasheet": "HES-32FT.pdf"
+  },
+  {
+   "_id": "b36",
+   "marca": "Sunc Solar",
+   "modelo": "SCAE-B-51.2-670 (BMS 200A)",
+   "kwh": 34.0,
+   "grupo": "34 KWh",
+   "precio": 2229.0,
+   "va": "51.2V / 670Ah",
+   "descarga": "200A",
+   "garantia": "5 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "8.000 ciclos a un 80% de DOD",
+   "dim": "81 × 40 × 75.5",
+   "peso": "---",
+   "origen": "—",
+   "datasheet": "SunC ESS catalog 2026.pdf"
+  },
+  {
+   "_id": "b37",
+   "marca": "Sunc Solar",
+   "modelo": "SCAE-B-51.2-670 (BMS 300A)",
+   "kwh": 34.0,
+   "grupo": "34 KWh",
+   "precio": 2291.0,
+   "va": "51.2V / 670Ah",
+   "descarga": "300A",
+   "garantia": "5 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "8.000 ciclos a un 80% de DOD",
+   "dim": "81 × 40 × 75.5",
+   "peso": "---",
+   "origen": "—",
+   "datasheet": "SunC ESS catalog 2026.pdf"
+  },
+  {
+   "_id": "b38",
+   "marca": "Rarlon",
+   "modelo": "XX-C51.2V 880AH",
+   "kwh": 45.0,
+   "grupo": "45 KWh",
+   "precio": null,
+   "va": "51.2V / 880Ah",
+   "descarga": "200A",
+   "garantia": "5 años",
+   "quimica": "Batería LiFePO4",
+   "ciclos": "10.000 ciclos a un 80% de DOD",
+   "dim": "10.85 x 30 x 8.85",
+   "peso": "---",
+   "origen": "China",
+   "datasheet": "XINXIN ENERGY.pdf"
+  }
+ ]
+};
+
+/* ---------------- helpers ---------------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const money = n => n==null ? null : "$"+Math.round(n).toLocaleString("en-US");
+const clean = s => (s==null?"":String(s)).trim();
+const dimc = s => clean(s).replace(/^\$/,"");
+function origin(o){ return (o && o!=="") ? o : "—"; }
+
+const state = { tab:"bat", view:"cards", q:"", brand:"", origin:"", onlyp:false, sort:"value" };
+
+/* unit + group config per tab */
+const CFG = {
+  bat:{ list:"batteries", unit:"kWh", perU:"$/kWh", perKey:"usd_per_kwh", capKey:"kwh",
+        groupKey:"grupo", groupLabel:g=>g, mapX:"Capacidad (kWh)" },
+  inv:{ list:"inverters", unit:"kW", perU:"$/kW", perKey:"usd_per_kw", capKey:"kw",
+        groupKey:"band", groupLabel:g=>g+" / kVA", mapX:"Potencia (kW)" }
+};
+
+/* precompute per-unit + brand list */
+["batteries","inverters"].forEach(k=>{
+  DATA[k].forEach(d=>{
+    d.origen = origin(d.origen);
+    if(k==="batteries") d.usd_per_kwh = (d.precio!=null && d.kwh) ? +(d.precio/d.kwh).toFixed(1) : null;
+    else d.usd_per_kw = (d.precio!=null && d.kw) ? +(d.precio/d.kw).toFixed(1) : null;
+  });
+});
+
+/* ---------------- filtering + grouping ---------------- */
+function activeItems(){
+  const cfg = CFG[state.tab];
+  let arr = DATA[cfg.list].slice();
+  const q = state.q.toLowerCase().trim();
+  if(q) arr = arr.filter(d => (clean(d.marca)+" "+clean(d.modelo)).toLowerCase().includes(q));
+  if(state.brand) arr = arr.filter(d => d.marca===state.brand);
+  if(state.origin) arr = arr.filter(d => d.origen===state.origin);
+  if(state.onlyp) arr = arr.filter(d => d.precio!=null);
+  return arr;
+}
+function groups(arr){
+  const cfg = CFG[state.tab];
+  const map = new Map();
+  arr.forEach(d=>{ const g=d[cfg.groupKey]||"—"; if(!map.has(g)) map.set(g,[]); map.get(g).push(d); });
+  // order groups by capacity ascending using representative capKey
+  return [...map.entries()].sort((a,b)=>{
+    const ca=Math.min(...a[1].map(x=>x[cfg.capKey]||1e9));
+    const cb=Math.min(...b[1].map(x=>x[cfg.capKey]||1e9));
+    return ca-cb;
+  });
+}
+function sortItems(items){
+  const cfg = CFG[state.tab], per=cfg.perKey, cap=cfg.capKey;
+  const byVal=(a,b)=>{ if(a[per]==null) return 1; if(b[per]==null) return -1; return a[per]-b[per]; };
+  const s=state.sort;
+  const c=items.slice();
+  if(s==="value") c.sort(byVal);
+  else if(s==="plow") c.sort((a,b)=>(a.precio??1e12)-(b.precio??1e12));
+  else if(s==="phigh") c.sort((a,b)=>(b.precio??-1)-(a.precio??-1));
+  else if(s==="cap") c.sort((a,b)=>(a[cap]||0)-(b[cap]||0));
+  else if(s==="brand") c.sort((a,b)=>clean(a.marca).localeCompare(clean(b.marca)));
+  return c;
+}
+
+/* ---------------- render overview ---------------- */
+function renderOverview(){
+  const cfg=CFG[state.tab];
+  if(state.tab==="sol"){ $("#overview").innerHTML=""; return; }
+  const all=activeItems();
+  const priced=all.filter(d=>d.precio!=null);
+  const brands=new Set(all.map(d=>d.marca));
+  let best=null; priced.forEach(d=>{ if(d[cfg.perKey]!=null && (!best || d[cfg.perKey]<best[cfg.perKey])) best=d; });
+  const pmin=priced.length?Math.min(...priced.map(d=>d.precio)):null;
+  const pmax=priced.length?Math.max(...priced.map(d=>d.precio)):null;
+
+  const tiles=`
+    <div class="tiles">
+      <div class="tile">
+        <div class="eyebrow">Equipos</div>
+        <div class="big num">${all.length}</div>
+        <div class="sub">${priced.length} con precio · ${all.length-priced.length} a cotizar</div>
+      </div>
+      <div class="tile">
+        <div class="eyebrow">Rango de precio</div>
+        <div class="big num">${pmin!=null?money(pmin):"—"}</div>
+        <div class="sub">hasta <span class="num">${pmax!=null?money(pmax):"—"}</span> USD</div>
+      </div>
+      <div class="tile best">
+        <div class="eyebrow">Mejor ${cfg.perU}</div>
+        <div class="big num">${best?money(best[cfg.perKey]):"—"}</div>
+        <div class="sub">${best?esc(best.marca)+" · "+esc(best.modelo||""):"—"}</div>
+      </div>
+      <div class="tile">
+        <div class="eyebrow">Cobertura</div>
+        <div class="big num">${brands.size}<span style="font-size:14px;color:var(--ink3)"> marcas</span></div>
+        <div class="sub">${groups(all).length} grupos de capacidad</div>
+      </div>
+    </div>`;
+  $("#overview").innerHTML = `<div class="ov">${tiles}${mapSVG(priced)}</div>`;
+  wireDots();
+}
+
+/* ---------------- market map (scatter) ---------------- */
+function mapSVG(priced){
+  const cfg=CFG[state.tab];
+  const W=520,H=210, pad={l:46,r:14,t:14,b:34};
+  if(!priced.length) return `<div class="map"><h3>Mapa de valor</h3><div class="empty">Sin equipos con precio para graficar.</div></div>`;
+  const xs=priced.map(d=>d[cfg.capKey]), ys=priced.map(d=>d[cfg.perKey]);
+  const xmin=0, xmax=Math.max(...xs)*1.06;
+  const ymin=0, ymax=Math.max(...ys)*1.08;
+  const X=v=>pad.l+(v-xmin)/(xmax-xmin)*(W-pad.l-pad.r);
+  const Y=v=>H-pad.b-(v-ymin)/(ymax-ymin)*(H-pad.t-pad.b);
+  // best per group => green
+  const bestIds=new Set();
+  groups(priced).forEach(([g,items])=>{
+    let b=null; items.forEach(d=>{ if(d[cfg.perKey]!=null && (!b||d[cfg.perKey]<b[cfg.perKey])) b=d; });
+    if(b) bestIds.add(b._id);
+  });
+  const xt=niceTicks(xmax,4), yt=niceTicks(ymax,4);
+  let g="";
+  yt.forEach(v=>{ g+=`<line class="grid" x1="${pad.l}" y1="${Y(v)}" x2="${W-pad.r}" y2="${Y(v)}"/>
+    <text class="tick" x="${pad.l-6}" y="${Y(v)+3}" text-anchor="end">${money(v)}</text>`; });
+  xt.forEach(v=>{ g+=`<text class="tick" x="${X(v)}" y="${H-pad.b+14}" text-anchor="middle">${v}</text>`; });
+  let pts="";
+  priced.forEach(d=>{
+    const win=bestIds.has(d._id);
+    pts+=`<circle class="dot" data-id="${d._id}" cx="${X(d[cfg.capKey]).toFixed(1)}" cy="${Y(d[cfg.perKey]).toFixed(1)}" r="${win?5.5:4.5}"
+      fill="${win?'var(--best)':'var(--base)'}" ${win?'stroke="var(--panel)" stroke-width="1.5"':'opacity="0.82"'} />`;
+  });
+  return `<div class="map">
+    <h3>Mapa de valor <span class="q">${cfg.mapX.replace(' ('+cfg.unit+')','')} × ${cfg.perU} · abajo = mejor</span></h3>
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" aria-label="Dispersión capacidad vs ${cfg.perU}">
+      ${g}
+      <text class="axlab" x="${pad.l}" y="${H-2}">${cfg.mapX} →</text>
+      <text class="axlab" transform="translate(12,${pad.t+2}) rotate(0)">${cfg.perU} ↓</text>
+      ${pts}
+    </svg>
+    <div class="leg">
+      <span><i style="background:var(--best)"></i>Mejor de su grupo</span>
+      <span><i style="background:var(--base);opacity:.82"></i>Otros</span>
+    </div>
+  </div>`;
+}
+function niceTicks(max,n){
+  const step=nice(max/n); const out=[]; for(let v=step; v<=max*1.001; v+=step) out.push(Math.round(v*100)/100); return out;
+}
+function nice(x){ const e=Math.pow(10,Math.floor(Math.log10(x))); const f=x/e;
+  return (f<1.5?1:f<3?2:f<7?5:10)*e; }
+
+function wireDots(){
+  const tip=$("#tip"), cfg=CFG[state.tab];
+  document.querySelectorAll(".map .dot").forEach(el=>{
+    el.addEventListener("mouseenter",e=>{
+      const d=DATA[cfg.list].find(x=>x._id==el.dataset.id); if(!d) return;
+      tip.innerHTML=`<div class="t">${esc(d.marca)}</div><div class="m">${esc(d.modelo||"")}<br>
+        ${d[cfg.capKey]} ${cfg.unit} · ${money(d.precio)}<br><b>${money(d[cfg.perKey])} ${cfg.perU}</b></div>`;
+      tip.style.opacity=1;
+    });
+    el.addEventListener("mousemove",e=>{
+      const r=12; let x=e.clientX+r, y=e.clientY+r;
+      const tw=tip.offsetWidth, th=tip.offsetHeight;
+      if(x+tw>innerWidth) x=e.clientX-tw-r; if(y+th>innerHeight) y=e.clientY-th-r;
+      tip.style.left=x+"px"; tip.style.top=y+"px";
+    });
+    el.addEventListener("mouseleave",()=>tip.style.opacity=0);
+  });
+}
+
+/* ---------------- render content ---------------- */
+function renderContent(){
+  if(state.tab==="sol"){ $("#content").innerHTML=solarPanel(); return; }
+  const arr=activeItems();
+  if(!arr.length){ $("#content").innerHTML=`<div class="empty">No hay equipos que coincidan con el filtro.</div>`; return; }
+  $("#content").innerHTML = state.view==="cards" ? cardsView(arr) : tableView(arr);
+  if(state.view==="cards") wireDots();
+}
+
+function cardsView(arr){
+  const cfg=CFG[state.tab];
+  let html="";
+  groups(arr).forEach(([g,items])=>{
+    const priced=items.filter(d=>d.precio!=null);
+    let best=null; priced.forEach(d=>{ if(d[cfg.perKey]!=null && (!best||d[cfg.perKey]<best[cfg.perKey])) best=d; });
+    const gmax=Math.max(...priced.map(d=>d[cfg.perKey]||0),1);
+    const ordered=sortItems(items);
+    html+=`<div class="group"><div class="ghead">
+      <span class="gcap">${esc(cfg.groupLabel(g))}</span>
+      <span class="gmeta">${items.length} modelo${items.length>1?"s":""} · ${priced.length} con precio</span>
+      ${best?`<span class="gbest">◆ Mejor valor · ${esc(best.marca)} <b>${money(best[cfg.perKey])} ${cfg.perU}</b></span>`:""}
+    </div><div class="cards">`;
+    ordered.forEach(d=> html+=card(d,best,gmax));
+    html+=`</div></div>`;
+  });
+  return html;
+}
+
+function card(d,best,gmax){
+  const cfg=CFG[state.tab];
+  const isWin = best && d===best;
+  const per = d[cfg.perKey];
+  const barW = per!=null ? Math.max(4,(per/gmax)*100) : 0;
+  const cap = state.tab==="bat" ? `${esc(d.kwh)} kWh` : `${esc(d.kw)} kW${d.kva?" · "+esc(d.kva)+" kVA":""}`;
+
+  // spec chips per type
+  let chips="";
+  if(state.tab==="bat"){
+    chips=chip("V/A",d.va)+chip("Descarga",d.descarga)+chip("Garantía",d.garantia);
+  }else{
+    chips=chip("Salida",d.vac)+chip("Banco",d.vdc)+chip("Carga red",d.carga_red)+chip("Pico",d.pico)+chip("Garantía",d.garantia);
+  }
+  // extra meta rows
+  let meta="";
+  const R=(k,v)=> clean(v)?`<div class="r"><span>${k}</span><span>${esc(v)}</span></div>`:"";
+  if(state.tab==="bat"){
+    meta=R("Química",d.quimica)+R("Ciclos",d.ciclos)+R("Dimensiones",dimc(d.dim)?dimc(d.dim)+" cm":"")+R("Peso",d.peso&&d.peso!=="No especificado"?d.peso+" kg":"");
+  }else{
+    meta=R("Fase",d.fase)+R("Transfer.",d.transfer)+R("Eficiencia",d.efic)+R("Paralelismo",d.paralelismo)+R("Dimensiones",dimc(d.dim)?dimc(d.dim)+" cm":"")+R("Peso",d.peso?d.peso+" kg":"");
+  }
+  const originBadge = d.origen!=="—" ? `<span class="badge orig">${esc(d.origen)}</span>` : "";
+
+  return `<div class="card ${isWin?'win':''}">
+    <div class="row1">
+      <span class="bmark"><i></i>${esc(d.marca)}</span>
+      ${isWin?`<span class="badge win">◆ Mejor valor</span>`:originBadge}
+    </div>
+    <div class="model">${esc(d.modelo||"—")}</div>
+    <div class="priceline">
+      ${d.precio!=null?`<span class="price num">${money(d.precio)}</span>`:`<span class="price na num">Cotizar</span>`}
+      ${per!=null?`<span class="perU num">${money(per)} <b>${cfg.perU}</b></span>`:""}
+    </div>
+    <div class="bar ${per==null?'empty':''}">${per!=null?`<span style="width:${barW.toFixed(1)}%"></span>`:""}</div>
+    <div class="specs"><span class="chip"><span class="k">Cap</span> <span class="v">${cap}</span></span>${chips}</div>
+    ${meta?`<div class="moremeta">${meta}</div>`:""}
+    ${clean(d.datasheet)?`<div class="ds"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>${esc(d.datasheet)}</div>`:""}
+  </div>`;
+}
+function chip(k,v){ return clean(v)?`<span class="chip"><span class="k">${k}</span> <span class="v">${esc(v)}</span></span>`:""; }
+
+/* ---------------- table view ---------------- */
+let tsort={key:null,dir:1};
+function tableView(arr){
+  const cfg=CFG[state.tab];
+  const cols = state.tab==="bat"
+    ? [["marca","Marca",0],["modelo","Modelo",0],["kwh","Cap "+cfg.unit,1],["precio","Precio",1],["usd_per_kwh","$/kWh",1],
+       ["va","V / A",0],["garantia","Garantía",0],["ciclos","Ciclos",0],["peso","Peso",0],["origen","Origen",0]]
+    : [["marca","Marca",0],["modelo","Modelo",0],["kw","kW",1],["kva","kVA",1],["precio","Precio",1],["usd_per_kw","$/kW",1],
+       ["vac","Salida",0],["pico","Pico",0],["garantia","Garantía",0],["origen","Origen",0]];
+  let rows=sortItems(arr);
+  if(tsort.key){ rows=arr.slice().sort((a,b)=>{
+    let x=a[tsort.key], y=b[tsort.key];
+    if(typeof x==="number"||typeof y==="number"){ x=x??-1; y=y??-1; return (x-y)*tsort.dir; }
+    return String(x||"").localeCompare(String(y||""))*tsort.dir;
+  }); }
+  // find best per group for highlight
+  const bestIds=new Set();
+  groups(arr).forEach(([g,items])=>{ let b=null; items.forEach(d=>{ if(d[cfg.perKey]!=null&&(!b||d[cfg.perKey]<b[cfg.perKey])) b=d;}); if(b) bestIds.add(b._id); });
+  const th=cols.map(c=>`<th data-k="${c[0]}" class="${tsort.key===c[0]?'sorted':''}">${c[1]}<span class="ar">${tsort.key===c[0]?(tsort.dir>0?'▲':'▼'):'▲'}</span></th>`).join("");
+  const body=rows.map(d=>{
+    const win=bestIds.has(d._id);
+    const cells=cols.map(c=>{
+      let v=d[c[0]];
+      if(c[0]==="precio") v = v!=null?money(v):`<span style="color:var(--ink3)">Cotizar</span>`;
+      else if(c[0]==="usd_per_kwh"||c[0]==="usd_per_kw") v = v!=null?money(v)+(win?' <span class="pill">◆</span>':''):"—";
+      else if(c[0]==="marca") v=`<span class="dotb"></span>${esc(v)}`;
+      else v = esc(v||"—");
+      return `<td class="${c[2]?'n':''}">${v}</td>`;
+    }).join("");
+    return `<tr class="${win?'win':''}">${cells}</tr>`;
+  }).join("");
+  return `<div class="tblwrap"><table><thead><tr>${th}</tr></thead><tbody>${body}</tbody></table></div>`;
+}
+
+/* ---------------- solar placeholder ---------------- */
+function solarPanel(){
+  return `<div class="soon-panel">
+    <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg></div>
+    <h2>Módulo de paneles solares</h2>
+    <p>Reservado para la siguiente etapa. Se integrará con la misma estructura: agrupación por capacidad
+       (Wp), comparación de precio y costo-beneficio (<b>$/Wp</b>), y extracción desde datasheets.</p>
+    <ul>
+      <li>Agrupación por potencia pico (Wp): 400–550 W, 550–600 W, etc.</li>
+      <li>Métrica de valor: <b>$/Wp</b> — el equivalente solar del $/kWh y $/kW.</li>
+      <li>Campos previstos: Voc, Isc, Vmp, Imp, eficiencia, tecnología (mono/bifacial), dimensiones, garantía.</li>
+    </ul>
+  </div>`;
+}
+
+/* ---------------- wiring ---------------- */
+function fillBrands(){
+  const cfg=CFG[state.tab]; if(state.tab==="sol") return;
+  const brands=[...new Set(DATA[cfg.list].map(d=>d.marca))].sort();
+  const sel=$("#fbrand"); const cur=state.brand;
+  sel.innerHTML=`<option value="">Todas las marcas</option>`+brands.map(b=>`<option ${b===cur?'selected':''}>${esc(b)}</option>`).join("");
+  if(!brands.includes(cur)) state.brand="", sel.value="";
+}
+function render(){ renderOverview(); renderContent(); }
+
+function setTab(t){
+  state.tab=t;
+  document.querySelectorAll(".tab").forEach(el=>el.setAttribute("aria-selected", el.dataset.tab===t));
+  const soon = t==="sol";
+  $("#controls").style.display = soon ? "none":"flex";
+  if(!soon) fillBrands();
+  render();
+}
+
+document.querySelectorAll(".tab").forEach(el=>{
+  if(el.classList.contains("soon")) { el.addEventListener("click",()=>setTab("sol")); return; }
+  el.addEventListener("click",()=>setTab(el.dataset.tab));
+});
+$("#q").addEventListener("input",e=>{ state.q=e.target.value; renderContent(); });
+$("#fbrand").addEventListener("change",e=>{ state.brand=e.target.value; render(); });
+$("#forigin").addEventListener("change",e=>{ state.origin=e.target.value; render(); });
+$("#sort").addEventListener("change",e=>{ state.sort=e.target.value; renderContent(); });
+$("#onlyp").addEventListener("change",e=>{ state.onlyp=e.target.checked; $("#oplbl").classList.toggle("on",e.target.checked); render(); });
+$("#vcards").addEventListener("click",()=>{ state.view="cards"; $("#vcards").ariaPressed="true"; $("#vtable").ariaPressed="false"; renderContent(); });
+$("#vtable").addEventListener("click",()=>{ state.view="table"; $("#vtable").ariaPressed="true"; $("#vcards").ariaPressed="false"; renderContent(); });
+document.addEventListener("click",e=>{ const th=e.target.closest("th[data-k]"); if(!th) return;
+  const k=th.dataset.k; if(tsort.key===k) tsort.dir*=-1; else { tsort.key=k; tsort.dir=1; } renderContent(); });
+
+/* theme */
+const SUN='<circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M19.4 4.6l-1.8 1.8M6.4 17.6l-1.8 1.8"/>';
+const MOON='<path d="M20 14.5A8 8 0 019.5 4a7 7 0 108.5 10.5z"/>';
+function applyTheme(t){ if(t) document.documentElement.setAttribute("data-theme",t); else document.documentElement.removeAttribute("data-theme");
+  const dark = t ? t==="dark" : matchMedia("(prefers-color-scheme:dark)").matches;
+  $("#themeic").innerHTML = dark?SUN:MOON; }
+let theme=null; applyTheme(null);
+$("#theme").addEventListener("click",()=>{ const dark = theme? theme==="dark" : matchMedia("(prefers-color-scheme:dark)").matches;
+  theme = dark?"light":"dark"; applyTheme(theme); });
+
+/* counts + init */
+$("#cbat").textContent=DATA.batteries.length;
+$("#cinv").textContent=DATA.inverters.length;
+$("#nds").textContent=(DATA.inverters.length+DATA.batteries.length)+" equipos";
+setTab("bat");
+</script>
+</body>
+</html>

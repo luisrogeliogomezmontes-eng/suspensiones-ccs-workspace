@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Esquema subsistema de carga (LVD) · Suspensiones P1</title>
+<style>
+  :root{
+    --bg:#eef1f5; --surface:#ffffff; --surface-2:#f6f8fb;
+    --ink:#13202e; --muted:#5a6b7c; --border:#d2dbe5;
+    --accent:#0ea5b7; --accent-ink:#0a7c8a; --grid:#dbe2ec;
+    --v12:#e5484d; --v5:#f5a623; --v33:#2fae72; --sig:#4f7cff; --gnd:#7c8b9a; --sense:#9d5fd6;
+    --warn-bg:#fff4e5; --warn-bd:#f0c48a; --warn-ink:#7a4d12;
+    --shadow:0 1px 2px rgba(20,40,60,.06),0 8px 24px rgba(20,40,60,.06);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#0d1621; --surface:#141f2b; --surface-2:#0f1926;
+      --ink:#e6eef6; --muted:#93a4b6; --border:#26323f;
+      --accent:#1fc0d2; --accent-ink:#5fd6e4; --grid:#182533; --gnd:#8697a7; --sense:#c299ec;
+      --warn-bg:#2a2011; --warn-bd:#5c451f; --warn-ink:#f2c98a;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#eef1f5; --surface:#ffffff; --surface-2:#f6f8fb; --ink:#13202e; --muted:#5a6b7c;
+    --border:#d2dbe5; --accent:#0ea5b7; --accent-ink:#0a7c8a; --grid:#dbe2ec; --gnd:#7c8b9a; --sense:#9d5fd6;
+    --warn-bg:#fff4e5; --warn-bd:#f0c48a; --warn-ink:#7a4d12;
+  }
+  :root[data-theme="dark"]{
+    --bg:#0d1621; --surface:#141f2b; --surface-2:#0f1926; --ink:#e6eef6; --muted:#93a4b6;
+    --border:#26323f; --accent:#1fc0d2; --accent-ink:#5fd6e4; --grid:#182533; --gnd:#8697a7; --sense:#c299ec;
+    --warn-bg:#2a2011; --warn-bd:#5c451f; --warn-ink:#f2c98a;
+  }
+  *{box-sizing:border-box}
+  html,body{min-height:100%}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.55;
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:28px 28px;background-position:-1px -1px;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:40px 22px 72px}
+  code,.mono{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace}
+  .eyebrow{font:600 12px/1 ui-monospace,monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--accent-ink);display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .eyebrow::before{content:"";width:26px;height:2px;background:var(--accent);border-radius:2px}
+  h1{font-size:clamp(26px,4vw,38px);line-height:1.08;margin:0 0 10px;font-weight:700;letter-spacing:-.02em;text-wrap:balance}
+  .sub{color:var(--muted);max-width:64ch;margin:0;font-size:15.5px}
+  .meta{margin-top:16px;display:flex;flex-wrap:wrap;gap:8px}
+  .chip{font:600 12px/1 ui-monospace,monospace;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:7px 12px}
+  section{margin-top:40px}
+  .sec-h{display:flex;align-items:baseline;gap:12px;margin:0 0 16px}
+  .sec-h h2{font-size:19px;margin:0;font-weight:700;letter-spacing:-.01em}
+  .sec-h .n{font:600 12px/1 ui-monospace,monospace;color:var(--accent-ink);padding-top:2px}
+  .sec-h .rule{flex:1;height:1px;background:var(--border);align-self:center}
+  .legend{display:flex;flex-wrap:wrap;gap:8px 18px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow)}
+  .leg{display:flex;align-items:center;gap:8px;font:600 12.5px/1 ui-monospace,monospace;color:var(--ink)}
+  .leg i{width:22px;height:4px;border-radius:3px;display:inline-block}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow)}
+  .diagram-scroll{overflow-x:auto;padding:8px}
+  svg.diagram{display:block;min-width:1000px;width:100%;height:auto}
+  .tbl-scroll{overflow-x:auto}
+  table{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
+  caption{caption-side:top;text-align:left;color:var(--muted);font-size:13px;padding:0 0 10px}
+  th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+  thead th{font:600 11.5px/1 ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  tbody tr:last-child td{border-bottom:none}
+  td .mono{font-size:13px}
+  .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:middle}
+  tbody tr:hover{background:var(--surface-2)}
+  .tag{display:inline-block;font:600 10.5px/1 ui-monospace,monospace;letter-spacing:.04em;text-transform:uppercase;padding:4px 8px;border-radius:6px;border:1px solid var(--border);color:var(--muted);background:var(--surface-2);white-space:nowrap}
+  .callouts{display:grid;gap:12px;grid-template-columns:1fr}
+  @media(min-width:640px){.callouts{grid-template-columns:1fr 1fr}}
+  .warn{display:flex;gap:12px;background:var(--warn-bg);border:1px solid var(--warn-bd);color:var(--warn-ink);border-radius:12px;padding:14px 16px;font-size:14px}
+  .warn .i{flex:0 0 auto;font-size:16px;line-height:1.3}
+  footer{margin-top:44px;color:var(--muted);font-size:12.5px;border-top:1px solid var(--border);padding-top:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Suspensiones Caracas · Proyecto 1</div>
+    <h1>Subsistema de carga — LVD 100% autónomo (D25)</h1>
+    <p class="sub">La moto carga el EcoFlow a <b>3A</b> solo cuando el alternador está reponiendo (VBAT alto). El control es <b>electrónica pura del lado de la moto</b> — módulo comparador con histéresis (tipo VSR): <b>carga ON &gt;13.5V · OFF &lt;13.0V</b>. No depende del ESP32 ni del EcoFlow: funciona aunque ambos estén apagados. El ESP32 <b>solo observa</b> (telemetría pasiva) y es opcional.</p>
+    <div class="meta">
+      <span class="chip">Control · módulo LVD/VSR autónomo</span>
+      <span class="chip">ON &gt;13.5V / OFF &lt;13.0V (en el módulo)</span>
+      <span class="chip">XL4016 · CC ≈3A · CV ≈12V</span>
+      <span class="chip">ESP32 = solo telemetría · GPIO34 + GPIO35</span>
+      <span class="chip">GPIO25 e IRLZ44N del relé: liberados</span>
+    </div>
+  </header>
+
+  <section aria-label="Leyenda de rieles">
+    <div class="legend">
+      <span class="leg"><i style="background:var(--v12)"></i>12–14 V (batería moto)</span>
+      <span class="leg"><i style="background:var(--sense)"></i>Sense ADC (~0–3.3V)</span>
+      <span class="leg"><i style="background:var(--gnd)"></i>GND (símbolo ⏚)</span>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-h"><span class="n">01</span><h2>Diagrama</h2><span class="rule"></span></div>
+    <div class="card diagram-scroll">
+      <svg class="diagram" viewBox="0 0 1060 660" role="img" aria-label="Diagrama del subsistema de carga autónomo: batería de moto, fusible, módulo LVD que controla el relé Bosch, XL4016 y EcoFlow; ESP32 solo lee dos divisores de telemetría">
+        <defs>
+          <marker id="arr2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+            <path d="M0,0 L9,4.5 L0,9 Z" fill="var(--muted)"/>
+          </marker>
+          <style>
+            .lbl{fill:var(--ink);font:700 15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+            .lbl-s{fill:var(--muted);font:500 12px ui-monospace,monospace}
+            .pin{fill:var(--muted);font:600 11.5px ui-monospace,monospace}
+            .pin-i{fill:var(--ink);font:700 11.5px ui-monospace,monospace}
+            .wlbl{fill:var(--muted);font:600 11px ui-monospace,monospace}
+            .w{fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+            .v12{stroke:var(--v12)} .sense{stroke:var(--sense)}
+            .gsym{stroke:var(--gnd);stroke-width:2;fill:none;stroke-linecap:round}
+            .node{fill:var(--ink)}
+            .domain{fill:none;stroke-dasharray:5 5;stroke-width:1.5}
+          </style>
+        </defs>
+
+        <!-- domain boundaries -->
+        <rect class="domain" x="20" y="55" width="1020" height="250" rx="16" stroke="var(--v12)"/>
+        <text class="wlbl" x="32" y="75" style="fill:var(--v12)">DOMINIO VEHÍCULO — CONTROL AUTÓNOMO</text>
+        <rect class="domain" x="20" y="330" width="1020" height="250" rx="16" stroke="var(--accent)"/>
+        <text class="wlbl" x="32" y="350" style="fill:var(--accent-ink)">DOMINIO ESP32 — TELEMETRÍA PASIVA (opcional)</text>
+
+        <!-- battery -->
+        <rect x="40" y="90" width="170" height="70" rx="12" fill="var(--surface-2)" stroke="var(--border)" stroke-width="1.5"/>
+        <text class="lbl" x="125" y="120" text-anchor="middle">Batería moto</text>
+        <text class="lbl-s" x="125" y="139" text-anchor="middle">12–14V (alternador)</text>
+
+        <path class="w v12" d="M210,110 H250" marker-end="url(#arr2)"/>
+
+        <!-- fuse -->
+        <rect x="250" y="94" width="80" height="32" rx="6" fill="var(--surface)" stroke="var(--v12)" stroke-width="1.5"/>
+        <text class="pin-i" x="290" y="114" text-anchor="middle">10A</text>
+
+        <path class="w v12" d="M330,110 H380"/>
+
+        <!-- post-fuse taps: module V+ (via ACC) and sense VBAT -->
+        <circle cx="340" cy="110" r="3.5" fill="var(--v12)"/>
+        <path class="w v12" d="M340,110 V352 H450 V390" marker-end="url(#arr2)"/>
+        <circle cx="340" cy="172" r="3.5" fill="var(--v12)"/>
+        <path class="w v12" d="M340,172 H150 V195" marker-end="url(#arr2)"/>
+        <rect x="160" y="158" width="112" height="15" fill="var(--surface)"/>
+        <text class="wlbl" x="164" y="169" style="fill:var(--v12)">vía llave ACC ⚠️</text>
+        <rect x="348" y="316" width="168" height="15" fill="var(--surface)"/>
+        <text class="wlbl" x="352" y="327" style="fill:var(--v12)">sense VBAT · post-fusible</text>
+
+        <!-- LVD module -->
+        <rect x="40" y="195" width="230" height="80" rx="12" fill="var(--surface)" stroke="var(--accent)" stroke-width="1.8"/>
+        <text class="lbl" x="155" y="221" text-anchor="middle">Módulo control de carga</text>
+        <text class="lbl-s" x="145" y="239" text-anchor="middle">LVD/VSR · ⚠️ por identificar</text>
+        <text class="lbl-s" x="145" y="257" text-anchor="middle">ON &gt;13.5V · OFF &lt;13.0V</text>
+        <circle cx="150" cy="195" r="3.5" class="node"/><text class="pin" x="140" y="188" text-anchor="end">V+</text>
+        <circle cx="270" cy="240" r="3.5" class="node"/><text class="pin" x="264" y="258" text-anchor="end">OUT</text>
+        <path class="gsym" d="M90,275 V285 M81,285 H99 M84,289 H96 M87,293 H93"/>
+
+        <!-- module OUT -> coil 85; coil 86 -> GND -->
+        <path class="w v12" d="M270,240 H420 V220" marker-end="url(#arr2)"/>
+        <path class="w" style="stroke:var(--gnd)" d="M530,220 V252"/>
+        <path class="gsym" d="M530,252 V260 M521,260 H539 M524,264 H536 M527,268 H533"/>
+
+        <!-- relay -->
+        <rect x="380" y="70" width="190" height="150" rx="12" fill="var(--surface)" stroke="var(--v12)" stroke-width="1.8"/>
+        <text class="lbl" x="475" y="98" text-anchor="middle">Relé Bosch 5p 40A</text>
+        <text class="lbl-s" x="475" y="116" text-anchor="middle">contacto en serie</text>
+        <circle cx="380" cy="110" r="3.5" class="node"/><text class="pin" x="392" y="106">30</text>
+        <circle cx="570" cy="110" r="3.5" class="node"/><text class="pin" x="562" y="134" text-anchor="end">87 (NO)</text>
+        <circle cx="570" cy="150" r="3.5" class="node"/><text class="pin" x="558" y="154" text-anchor="end">87a (NC, sin uso)</text>
+        <circle cx="420" cy="220" r="3.5" class="node"/><text class="pin" x="420" y="212" text-anchor="middle">85</text>
+        <circle cx="530" cy="220" r="3.5" class="node"/><text class="pin" x="530" y="212" text-anchor="middle">86</text>
+        <text class="lbl-s" x="475" y="190" text-anchor="middle">bobina 85–86</text>
+
+        <path class="w v12" d="M570,110 H640"/>
+        <circle cx="610" cy="110" r="3.5" fill="var(--v12)"/>
+        <path class="w v12" d="M610,110 V390" marker-end="url(#arr2)"/>
+        <rect x="616" y="160" width="150" height="15" fill="var(--surface)"/>
+        <text class="wlbl" x="620" y="171" style="fill:var(--v12)">sense 2 · post-relé</text>
+
+        <!-- XL4016 -->
+        <rect x="640" y="75" width="150" height="70" rx="12" fill="var(--surface-2)" stroke="var(--border)" stroke-width="1.5"/>
+        <text class="lbl" x="715" y="103" text-anchor="middle">XL4016</text>
+        <text class="lbl-s" x="715" y="121" text-anchor="middle">CV ≈12V · CC ≈3A</text>
+
+        <path class="w v12" d="M790,110 H860" marker-end="url(#arr2)"/>
+        <text class="wlbl" x="797" y="100" style="fill:var(--v12)">jack 5521</text>
+
+        <!-- EcoFlow -->
+        <rect x="860" y="75" width="150" height="70" rx="12" fill="var(--surface-2)" stroke="var(--border)" stroke-width="1.5"/>
+        <text class="lbl" x="935" y="103" text-anchor="middle">EcoFlow</text>
+        <text class="lbl-s" x="935" y="121" text-anchor="middle">entrada de carga</text>
+
+        <!-- telemetry sense box -->
+        <rect x="380" y="390" width="280" height="90" rx="12" fill="var(--surface)" stroke="var(--sense)" stroke-width="1.5"/>
+        <text class="lbl-s" x="520" y="418" text-anchor="middle" style="fill:var(--sense);font-weight:700">Telemetría — 2 divisores 100k/22k</text>
+        <text class="lbl-s" x="520" y="436" text-anchor="middle">+ Zener 3.3V + RC (100nF) cada uno</text>
+        <circle cx="450" cy="390" r="3.5" class="node"/><text class="pin" x="450" y="382" text-anchor="middle">VBAT</text>
+        <circle cx="610" cy="390" r="3.5" class="node"/><text class="pin" x="610" y="382" text-anchor="middle">post-relé</text>
+        <circle cx="660" cy="440" r="3.5" class="node"/>
+        <circle cx="660" cy="466" r="3.5" class="node"/>
+        <path class="gsym" d="M520,480 V490 M511,490 H529 M514,494 H526 M517,498 H523"/>
+
+        <path class="w sense" d="M660,440 H730" marker-end="url(#arr2)"/>
+        <path class="w sense" d="M660,466 H730" marker-end="url(#arr2)"/>
+        <rect x="668" y="446" width="54" height="13" fill="var(--surface)"/>
+        <text class="wlbl" x="670" y="456" style="fill:var(--sense)">~0–3.3V</text>
+
+        <!-- ESP32 -->
+        <rect x="730" y="370" width="230" height="190" rx="14" fill="var(--surface)" stroke="var(--accent)" stroke-width="1.8"/>
+        <text class="lbl" x="845" y="400" text-anchor="middle">ESP32 DevKit</text>
+        <text class="lbl-s" x="845" y="418" text-anchor="middle">solo lee — no controla</text>
+        <circle cx="730" cy="440" r="3.5" class="node"/><text class="pin-i" x="742" y="444">GPIO34 · vbat_v</text>
+        <circle cx="730" cy="466" r="3.5" class="node"/><text class="pin-i" x="742" y="470">GPIO35 · charge_on</text>
+        <circle cx="730" cy="520" r="3.5" class="node"/><text class="pin-i" x="742" y="524">GND</text>
+        <path class="gsym" d="M718,520 H710 M710,516 V524 M706,518 V522"/>
+
+      </svg>
+    </div>
+    <div class="callouts" style="margin-top:14px">
+      <div class="warn"><span class="i">✅</span><span><b>Autónomo de verdad — deadlock eliminado.</b> El módulo vive de la batería de la moto (vía llave): decide y conmuta aunque el EcoFlow y el ESP32 estén apagados. El ESP32 solo observa — si se quita, el sistema sigue funcionando igual. El jumper 30–87 queda solo como herramienta de emergencia si el módulo falla.</span></div>
+      <div class="warn"><span class="i">⚠️</span><span><b>Módulo por identificar (fila 29 de la compra).</b> Debe ser tipo <b>LVD/VSR</b>: conecta con voltaje ALTO y corta con voltaje BAJO, con ambos umbrales ajustables. Si resulta ser un cargador inverso (conecta con voltaje bajo) no sirve tal cual → plan B (~$2–5): comparador LM393+TL431, módulo XH-M609, o un VSR de moto comercial. Poner <b>1N4007 en antiparalelo sobre la bobina 85–86</b> si el módulo no trae flyback.</span></div>
+      <div class="warn"><span class="i">⏚</span><span><b>GND común: solo lo necesita la telemetría.</b> Los divisores requieren unir el negativo de la moto con el GND del ESP32 en un punto (la bornera). El control autónomo no lo necesita.</span></div>
+      <div class="warn"><span class="i">🔌</span><span><b>Alimentar el módulo vía llave de encendido (ACC).</b> Estos módulos consumen 10–30mA continuos (display/relé interno) — conectado directo a batería drenaría ~0.5Ah/día estacionado. Con la llave: moto apagada = módulo apagado = consumo cero (solo los ~110µA del divisor de telemetría).</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-h"><span class="n">02</span><h2>Conexiones</h2><span class="rule"></span></div>
+    <div class="card tbl-scroll">
+      <table>
+        <thead><tr><th>Riel / señal</th><th>Desde</th><th>Hasta</th><th>Nota</th></tr></thead>
+        <tbody>
+          <tr><td><span class="dot" style="background:var(--v12)"></span>12–14V</td><td>Batería moto (+)</td><td>Fusible 10A</td><td>en línea, antes de todo</td></tr>
+          <tr><td><span class="dot" style="background:var(--v12)"></span>12–14V</td><td>Fusible</td><td>Relé pin 30 (común)</td><td>—</td></tr>
+          <tr><td><span class="dot" style="background:var(--v12)"></span>12–14V</td><td>Relé pin 87 (NO)</td><td>XL4016 VIN(+)</td><td>circuito cerrado = carga habilitada · <b>3A o 0A, nada intermedio</b></td></tr>
+          <tr><td><span class="dot" style="background:var(--v12)"></span>12V reg.</td><td>XL4016 VOUT(+)</td><td>EcoFlow entrada (jack 5.5×2.1)</td><td>fijar CV ≈12V y <b>CC ≈3A</b> · plug aguanta 5A → OK a 3A</td></tr>
+          <tr><td><span class="dot" style="background:var(--v12)"></span>12–14V</td><td>+12V post-fusible <b>vía llave ACC</b></td><td>Módulo LVD V+ (y su GND al negativo)</td><td>el módulo decide con sus propios umbrales: ON &gt;13.5 / OFF &lt;13.0</td></tr>
+          <tr><td><span class="dot" style="background:var(--v12)"></span>Conmutación</td><td>Módulo LVD OUT (su relé/contacto)</td><td>Bobina relé 85 · bobina 86 → GND</td><td>+ 1N4007 flyback en la bobina si el módulo no lo trae</td></tr>
+          <tr><td><span class="dot" style="background:var(--sense)"></span>Sense 1</td><td>+12V post-fusible (directo, sin llave)</td><td>Divisor 100k/22k → ESP32 <span class="mono">GPIO34</span></td><td><span class="mono">vbat_v</span> · + Zener 3.3V + 100nF · ~110µA de drenaje (nada)</td></tr>
+          <tr><td><span class="dot" style="background:var(--sense)"></span>Sense 2</td><td>Nodo post-relé (entrada XL4016)</td><td>Divisor 100k/22k → ESP32 <span class="mono">GPIO35</span></td><td><span class="mono">charge_on</span>: ~2.4V si carga activa, 0V si no · + Zener + 100nF</td></tr>
+          <tr><td><span class="dot" style="background:var(--gnd)"></span>GND</td><td>Negativo moto ↔ GND ESP32</td><td>Un solo punto (bornera)</td><td>solo necesario para la telemetría</td></tr>
+          <tr><td>Bypass (emergencia)</td><td>Jumper con terminales</td><td>Entre 30 y 87 del zócalo</td><td>fuerza la carga a mano si el módulo falla — $0, terminales ya comprados</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-h"><span class="n">03</span><h2>Qué componente hace qué (y qué quedó libre)</h2><span class="rule"></span></div>
+    <div class="card tbl-scroll">
+      <table>
+        <thead><tr><th>Componente</th><th>Rol</th><th>Estado</th></tr></thead>
+        <tbody>
+          <tr><td>Módulo control de carga (fila 29)</td><td><b>El cerebro</b>: compara VBAT contra los umbrales y conmuta</td><td><span class="tag">Confirmar al llegar</span></td></tr>
+          <tr><td>Relé Bosch 5p 40A + zócalo</td><td><b>El músculo</b>: su contacto lleva los 3A del camino de carga</td><td><span class="tag">Se usa</span></td></tr>
+          <tr><td>XL4016</td><td><b>El regulador</b>: limita a 3A / ~12V lo que la moto entrega</td><td><span class="tag">Se usa</span></td></tr>
+          <tr><td>Fusible 10A + portafusible</td><td><b>La protección</b> del cableado</td><td><span class="tag">Se usa</span></td></tr>
+          <tr><td>2× divisor 100k/22k + Zener + 100nF</td><td><b>Los ojos del ESP32</b>: vbat_v y charge_on (telemetría)</td><td><span class="tag">Se usan</span></tr>
+          <tr><td>IRLZ44N (el 2º, del relé) + GPIO25</td><td>Ya no se necesitan — el módulo conmuta la bobina</td><td><span class="tag">Liberados</span></td></tr>
+          <tr><td>1N4007</td><td>Flyback en la bobina (si el módulo no trae el suyo)</td><td><span class="tag">Se usa 1</span></td></tr>
+          <tr><td>Jumper bypass 30–87</td><td>Recuperación manual de emergencia</td><td><span class="tag">Por armar · $0</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-h"><span class="n">04</span><h2>Pendiente</h2><span class="rule"></span></div>
+    <div class="card" style="padding:16px 18px">
+      <ul style="margin:0;padding-left:20px;font-size:14px;color:var(--muted)">
+        <li><b>Módulo (fila 29) — foto analizada</b>: relé SONGLE SRD-12VDC-SL-A (10A/30VDC, solo NO — puede llevar los 3A directo, Bosch pasaría a repuesto), 2 trimmers W203 (ambos umbrales ajustables ✓), LM393, sin display. <b>Falta la prueba del click</b> para confirmar la dirección de la lógica: BAT± a la batería de la moto (con fusible), multímetro en continuidad en el borne de 2 pines, comparar motor apagado (~12.5V) vs. motor acelerado (~14V). Si cierra con motor ANDANDO → lógica VSR ✓ sirve tal cual. Si cierra con motor APAGADO → lógica inversa (cargador) → plan B ~$2–5.</li>
+        <li>Ajustar los umbrales del módulo <b>con el multímetro en la batería real</b>: ON 13.5V · OFF 13.0V (validar luego con el estudio RPM).</li>
+        <li>Ubicar la <b>línea ACC (llave de encendido)</b> de la moto para alimentar el módulo — consumo cero estacionado.</li>
+        <li><span class="mono">firmware/charge.{h,cpp}</span> ahora es <b>pasivo</b>: leer GPIO34/GPIO35 (mediana de N lecturas, <span class="mono">analogReadMilliVolts()</span>), publicar <span class="mono">vbat_v</span>/<span class="mono">charge_on</span>. Sin control, sin GPIO25. La calibración del ADC ya no afecta la conmutación — solo la precisión del dato reportado.</li>
+        <li>⚠️ <b>Probar la carga real</b>: la entrada del EcoFlow pide ~6.9A (medido EcoFlow→EcoFlow) y recibirá 3A del CC → verificar que se adapte y no entre en ciclos de corte/rearranque.</li>
+        <li>Fans definitivos (los compra el dpto. de mecánica) → recalcular el presupuesto del jack y el driver cuando se sepa su amperaje.</li>
+        <li>El proyecto KiCad <span class="mono">docs/kicad/carga-relay/</span> quedó desactualizado (mostraba control por ESP32) — rehacerlo cuando el módulo esté confirmado.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-h"><span class="n">05</span><h2>Calibración del módulo — procedimiento exacto</h2><span class="rule"></span></div>
+    <div class="card" style="padding:16px 18px">
+      <p style="margin:0 0 10px;font-size:14px;color:var(--muted)"><b>Banco de pruebas con lo que ya se tiene</b> — fuente ajustable improvisada que cubre 12–14.5V:</p>
+      <p style="margin:0 0 14px;font-size:14px" class="mono">EcoFlow USB-C → ZY12PDN (fijado a 20V) → LM2596 (entrada) → LM2596 salida = "batería falsa" ajustable</p>
+      <ol style="margin:0;padding-left:20px;font-size:14px;color:var(--muted);display:grid;gap:8px">
+        <li><b>Preparar la fuente</b>: ZY12PDN a 20V (botón hasta el LED de 20V; si el USB-C del EcoFlow solo da 15V, sirve pero justo). Multímetro en la salida del LM2596 y girar su trimmer hasta <b>12.0V exactos</b>. ⚠️ SIEMPRE ajustar el buck a ~12V ANTES de conectar el módulo — 20V directos pueden quemarlo.</li>
+        <li><b>Conectar el módulo</b>: salida del buck → <span class="mono">BAT+</span> / <span class="mono">BAT−</span>. Multímetro #2 (o el mismo, alternando) en <b>continuidad</b> sobre el borne de 2 pines (contacto del relé). Nada más conectado. <i>Si el LED del módulo no enciende con BAT± solo → puentear también <span class="mono">V+</span>/<span class="mono">V−</span> a la fuente (algunas placas se alimentan por V).</i> <b>¿Por qué es seguro medir continuidad ahí con el módulo encendido?</b> Porque es un <b>contacto seco</b>: un switch mecánico galvánicamente aislado de la electrónica — no tiene voltaje propio mientras no le conectes nada (como medir un interruptor de pared sin instalar). La regla de oro sigue vigente: continuidad NUNCA sobre puntos con voltaje (BAT±, rieles, batería). <b>Alternativa sin multímetro</b>: usar un fan como lámpara de prueba — EcoFlow jack (+) → borne pin 1 → pin 2 → fan(+), fan(−) → jack(−); relé cierra = fan gira. Señales redundantes al conmutar: click audible + LED de la placa + pito/fan.</li>
+        <li><b>Descubrir la lógica</b>: subir el voltaje despacio 12.0→14.5V (trimmer del buck) y anotar a qué voltaje hace click el relé y en qué sentido. Luego bajar 14.5→12.0 y anotar dónde suelta. <b>Cierra subiendo = lógica VSR ✓ sirve. Cierra bajando = lógica cargador ✗ plan B.</b></li>
+        <li><b>Identificar los trimmers</b>: parado cerca del punto de click, girar el trimmer A media vuelta → ¿se movió el punto? Repetir con el B. Así se sabe cuál fija cada umbral (son multivuelta ~25 vueltas: cambios lentos, paciencia).</li>
+        <li><b>Fijar ON = 13.5V</b>: fuente en 13.5V exactos (medidos EN los bornes BAT del módulo), girar el trimmer del umbral alto hasta que el relé <i>apenas</i> cierre. Verificar: bajar a 13.4 → reabrir la subida → debe cerrar de nuevo justo en ~13.5.</li>
+        <li><b>Fijar OFF = 13.0V</b>: fuente en 13.05V → el relé debe seguir cerrado; bajar a 12.95V → debe abrir. Ajustar el otro trimmer hasta lograrlo. ⚠️ Si al mover un trimmer se corren AMBOS puntos (placas donde un pot es "centro" y el otro "ventana"), alternar ajustes entre los dos iterando.</li>
+        <li><b>Verificación final ×2</b>: ciclo completo 12.8 → sube → click ON en 13.5±0.05 → baja → click OFF en 13.0±0.05. Dos veces seguidas sin tocar nada.</li>
+        <li><b>Medir el standby</b>: multímetro en <b>mA en serie</b> con BAT+, relé abierto. <b>&lt;3mA → puede ir directo a batería</b> (sin cable a la llave ACC); más → alimentarlo vía ACC.</li>
+        <li><b>Sanity en la moto</b>: BAT± a la batería real (con el fusible de 10A), continuidad en el contacto: motor apagado (~12.5V) = abierto · motor acelerado (~14V) = cerrado · en ralentí observar qué hace (ese dato alimenta el estudio RPM).</li>
+      </ol>
+      <p style="margin:12px 0 0;font-size:13px;color:var(--muted)">⚠️ Calibrar SIEMPRE con el camino de carga desconectado (el contacto solo al multímetro, nunca al XL4016/EcoFlow). ⚠️ Medir el voltaje en los bornes del módulo, no en el buck (los cables caen algo). Los 13.5/13.0 son iniciales — se validan después con el estudio RPM.</p>
+    </div>
+  </section>
+
+  <footer>
+    Suspensiones Caracas · Proyecto 1 — Telemetría ESP32 · Subsistema de control de carga del EcoFlow (D25: control autónomo, reemplaza el control por ESP32 de D20/D24). El BOM está consolidado en <span class="mono">docs/informes/C_esquema-nucleo-esp32.html</span> y el gasto real en <span class="mono">E_informe-gastos.html</span>. Documento local — abrir en el navegador.
+  </footer>
+</div>
+</body>
+</html>

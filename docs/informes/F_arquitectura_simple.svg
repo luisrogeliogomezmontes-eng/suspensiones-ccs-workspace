@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 600" width="1240" height="600">
+  <rect x="0" y="0" width="1240" height="600" fill="#FFFFFF"/>
+  <g font-family="Inter, Arial, sans-serif">
+
+    <text x="620" y="56" font-size="25" font-weight="700" fill="#0F172A" text-anchor="middle">Arquitectura — Telemetría ESP32 · Suspensiones Caracas</text>
+    <text x="620" y="84" font-size="14" fill="#64748B" text-anchor="middle">Flujo de datos + subsistemas de energía y carga</text>
+
+    <!-- ===== FLUJO (fila superior) ===== -->
+    <text x="40" y="136" font-size="12" font-weight="700" fill="#94A3B8">① TELEMETRÍA</text>
+
+    <rect x="40" y="150" width="196" height="110" rx="12" fill="#F1F5F9" stroke="#64748B" stroke-width="2"/>
+    <text x="138" y="198" font-size="15" font-weight="700" fill="#334155" text-anchor="middle">Sensores</text>
+    <text x="138" y="221" font-size="11.5" fill="#64748B" text-anchor="middle">DHT22 · GPS · VBAT</text>
+
+    <rect x="281" y="150" width="196" height="110" rx="12" fill="#EFF6FF" stroke="#2563EB" stroke-width="2"/>
+    <text x="379" y="198" font-size="15" font-weight="700" fill="#1D4ED8" text-anchor="middle">ESP32-WROOM</text>
+    <text x="379" y="221" font-size="11.5" fill="#2563EB" text-anchor="middle">Firmware + WiFi 2.4 GHz</text>
+
+    <rect x="522" y="150" width="196" height="110" rx="12" fill="#F0F9FF" stroke="#0EA5E9" stroke-width="2"/>
+    <text x="620" y="198" font-size="15" font-weight="700" fill="#0369A1" text-anchor="middle">Starlink</text>
+    <text x="620" y="221" font-size="11.5" fill="#0284C7" text-anchor="middle">Enlace a Internet</text>
+
+    <rect x="763" y="150" width="196" height="110" rx="12" fill="#F0FDFA" stroke="#0D9488" stroke-width="2"/>
+    <text x="861" y="198" font-size="15" font-weight="700" fill="#0F766E" text-anchor="middle">Supabase</text>
+    <text x="861" y="221" font-size="11.5" fill="#0D9488" text-anchor="middle">Postgres · RLS · Realtime</text>
+
+    <rect x="1004" y="150" width="196" height="110" rx="12" fill="#F5F3FF" stroke="#7C3AED" stroke-width="2"/>
+    <text x="1102" y="198" font-size="15" font-weight="700" fill="#6D28D9" text-anchor="middle">Dashboard</text>
+    <text x="1102" y="221" font-size="11.5" fill="#7C3AED" text-anchor="middle">Next.js @ Vercel</text>
+
+    <!-- conectores -->
+    <line x1="236" y1="205" x2="273" y2="205" stroke="#94A3B8" stroke-width="2.5"/>
+    <polygon points="273,199 281,205 273,211" fill="#94A3B8"/>
+    <line x1="477" y1="205" x2="514" y2="205" stroke="#94A3B8" stroke-width="2.5"/>
+    <polygon points="514,199 522,205 514,211" fill="#94A3B8"/>
+    <line x1="718" y1="205" x2="755" y2="205" stroke="#94A3B8" stroke-width="2.5"/>
+    <polygon points="755,199 763,205 755,211" fill="#94A3B8"/>
+    <line x1="959" y1="205" x2="996" y2="205" stroke="#94A3B8" stroke-width="2.5"/>
+    <polygon points="996,199 1004,205 996,211" fill="#94A3B8"/>
+
+    <!-- ===== SUBSISTEMAS (fila inferior) ===== -->
+    <rect x="40" y="340" width="560" height="130" rx="12" fill="#FFFBEB" stroke="#D97706" stroke-width="2"/>
+    <text x="64" y="378" font-size="16" font-weight="700" fill="#B45309">② Energía (D23)</text>
+    <text x="64" y="408" font-size="12.5" fill="#92400E">EcoFlow jack 12 V → buck LM2596 → 5 V al ESP32.</text>
+    <text x="64" y="430" font-size="12.5" fill="#92400E">Fan directo al riel 12 V. El ESP32 nunca toca los 12 V.</text>
+
+    <rect x="640" y="340" width="560" height="130" rx="12" fill="#FEF2F2" stroke="#DC2626" stroke-width="2"/>
+    <text x="664" y="378" font-size="16" font-weight="700" fill="#B91C1C">③ Carga moto → EcoFlow (D24)</text>
+    <text x="664" y="408" font-size="12.5" fill="#991B1B">Batería → fusible → relé Bosch → XL4016 (CV 12 V / CC 3 A) → EcoFlow.</text>
+    <text x="664" y="430" font-size="12.5" fill="#991B1B">ESP32 sensa VBAT · histéresis ON &gt; 13.5 V / OFF &lt; 13.0 V.</text>
+
+    <text x="620" y="530" font-size="12" fill="#64748B" text-anchor="middle">Unidad móvil: maleta de moto (Starlink + EcoFlow) · Fase 2 desplegada · Fase 3 en curso</text>
+    <text x="620" y="554" font-size="10.5" fill="#94A3B8" text-anchor="middle">Suspensiones Caracas · Depto. Eléctrica/Electrónica · 2026-07-16</text>
+  </g>
+</svg>

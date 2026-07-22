@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Informe de gastos — compra de electrónica · Suspensiones P1</title>
+<style>
+  :root{
+    --bg:#eef1f5; --surface:#ffffff; --surface-2:#f6f8fb;
+    --ink:#13202e; --muted:#5a6b7c; --border:#d2dbe5;
+    --accent:#0ea5b7; --accent-ink:#0a7c8a; --grid:#dbe2ec;
+    --warn-bg:#fff4e5; --warn-bd:#f0c48a; --warn-ink:#7a4d12;
+    --good:#0ca30c; --crit:#d03b3b;
+    --cat-a:#2a78d6; --cat-b:#1baf7a; --cat-c:#eda100; --cat-d:#008300; --cat-e:#4a3aa7; --cat-f:#e34948;
+    --shadow:0 1px 2px rgba(20,40,60,.06),0 8px 24px rgba(20,40,60,.06);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#0d1621; --surface:#141f2b; --surface-2:#0f1926;
+      --ink:#e6eef6; --muted:#93a4b6; --border:#26323f;
+      --accent:#1fc0d2; --accent-ink:#5fd6e4; --grid:#182533;
+      --warn-bg:#2a2011; --warn-bd:#5c451f; --warn-ink:#f2c98a;
+      --good:#3fc23f; --crit:#e66767;
+      --cat-a:#3987e5; --cat-b:#199e70; --cat-c:#c98500; --cat-d:#3fae3f; --cat-e:#9085e9; --cat-f:#e66767;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#eef1f5; --surface:#ffffff; --surface-2:#f6f8fb; --ink:#13202e; --muted:#5a6b7c;
+    --border:#d2dbe5; --accent:#0ea5b7; --accent-ink:#0a7c8a; --grid:#dbe2ec;
+    --warn-bg:#fff4e5; --warn-bd:#f0c48a; --warn-ink:#7a4d12; --good:#0ca30c; --crit:#d03b3b;
+    --cat-a:#2a78d6; --cat-b:#1baf7a; --cat-c:#eda100; --cat-d:#008300; --cat-e:#4a3aa7; --cat-f:#e34948;
+  }
+  :root[data-theme="dark"]{
+    --bg:#0d1621; --surface:#141f2b; --surface-2:#0f1926; --ink:#e6eef6; --muted:#93a4b6;
+    --border:#26323f; --accent:#1fc0d2; --accent-ink:#5fd6e4; --grid:#182533;
+    --warn-bg:#2a2011; --warn-bd:#5c451f; --warn-ink:#f2c98a; --good:#3fc23f; --crit:#e66767;
+    --cat-a:#3987e5; --cat-b:#199e70; --cat-c:#c98500; --cat-d:#3fae3f; --cat-e:#9085e9; --cat-f:#e66767;
+  }
+  *{box-sizing:border-box}
+  html,body{min-height:100%}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.55;
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:28px 28px;background-position:-1px -1px;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:40px 22px 72px}
+  code,.mono{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace}
+  .eyebrow{font:600 12px/1 ui-monospace,monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--accent-ink);display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .eyebrow::before{content:"";width:26px;height:2px;background:var(--accent);border-radius:2px}
+  h1{font-size:clamp(26px,4vw,38px);line-height:1.08;margin:0 0 10px;font-weight:700;letter-spacing:-.02em;text-wrap:balance}
+  .sub{color:var(--muted);max-width:64ch;margin:0;font-size:15.5px}
+  .meta{margin-top:16px;display:flex;flex-wrap:wrap;gap:8px}
+  .chip{font:600 12px/1 ui-monospace,monospace;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:7px 12px}
+  section{margin-top:40px}
+  .sec-h{display:flex;align-items:baseline;gap:12px;margin:0 0 16px}
+  .sec-h h2{font-size:19px;margin:0;font-weight:700;letter-spacing:-.01em}
+  .sec-h .n{font:600 12px/1 ui-monospace,monospace;color:var(--accent-ink);padding-top:2px}
+  .sec-h .rule{flex:1;height:1px;background:var(--border);align-self:center}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow)}
+  .tbl-scroll{overflow-x:auto}
+  table{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
+  caption{caption-side:top;text-align:left;color:var(--muted);font-size:13px;padding:0 0 10px}
+  th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+  thead th{font:600 11.5px/1 ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  tbody tr:last-child td{border-bottom:none}
+  td .mono{font-size:13px}
+  td.money{font-variant-numeric:tabular-nums;font-weight:700;text-align:right;white-space:nowrap}
+  tbody tr:hover{background:var(--surface-2)}
+  .tag{display:inline-block;font:600 10.5px/1 ui-monospace,monospace;letter-spacing:.04em;text-transform:uppercase;padding:4px 8px;border-radius:6px;border:1px solid var(--border);color:var(--muted);background:var(--surface-2);white-space:nowrap}
+  .pill{display:inline-flex;align-items:center;gap:6px;font:600 11px/1 ui-monospace,monospace;padding:5px 10px;border-radius:999px;white-space:nowrap}
+  .pill.ok{background:color-mix(in srgb,var(--good) 16%,transparent);color:var(--good)}
+  .pill.pend{background:var(--warn-bg);color:var(--warn-ink);border:1px solid var(--warn-bd)}
+  .kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  @media(min-width:720px){.kpis{grid-template-columns:repeat(4,1fr)}}
+  .kpi{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow)}
+  .kpi .v{font:700 26px/1.1 ui-monospace,monospace;letter-spacing:-.01em}
+  .kpi .l{margin-top:6px;font-size:12.5px;color:var(--muted)}
+  .bars{display:flex;flex-direction:column;gap:14px;padding:20px 22px}
+  .bar-row{display:grid;grid-template-columns:200px 1fr 90px;align-items:center;gap:12px}
+  .bar-name{font-size:13.5px;font-weight:600}
+  .bar-track{background:var(--surface-2);border-radius:6px;height:14px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:6px}
+  .bar-val{font:700 13px ui-monospace,monospace;text-align:right;font-variant-numeric:tabular-nums}
+  .callouts{display:grid;gap:12px;grid-template-columns:1fr}
+  @media(min-width:720px){.callouts{grid-template-columns:1fr 1fr}}
+  .warn{display:flex;gap:12px;background:var(--warn-bg);border:1px solid var(--warn-bd);color:var(--warn-ink);border-radius:12px;padding:14px 16px;font-size:13.5px}
+  .warn .i{flex:0 0 auto;font-size:16px;line-height:1.3}
+  .warn b{color:var(--warn-ink)}
+  footer{margin-top:44px;color:var(--muted);font-size:12.5px;border-top:1px solid var(--border);padding-top:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Suspensiones Caracas · Proyecto 1</div>
+    <h1>Informe de gastos — compra de electrónica</h1>
+    <p class="sub">Gasto real de la compra única de hardware, por subsistema. Fuente: hoja de compras del usuario (<span class="mono">docs/compras-electronica.csv</span>), cruzada con la BOM planificada (<span class="mono">docs/PRESUPUESTO.csv</span>) y los esquemáticos A–E.</p>
+    <div class="meta">
+      <span class="chip">29 ítems</span>
+      <span class="chip">Compras 9/7 → 13/7/2026</span>
+      <span class="chip">Precios en USD (MercadoLibre Venezuela)</span>
+    </div>
+  </header>
+
+  <section>
+    <div class="sec-h"><span class="n">01</span><h2>Resumen</h2><span class="rule"></span></div>
+    <div class="kpis">
+      <div class="kpi"><div class="v">$184.80</div><div class="l">Gasto total</div></div>
+      <div class="kpi"><div class="v">$177.07</div><div class="l">Comprado (26 ítems)</div></div>
+      <div class="kpi"><div class="v">$7.73</div><div class="l">En camino (3 ítems)</div></div>
+      <div class="kpi"><div class="v">$56.60</div><div class="l">Herramientas (no recurrente)</div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-h"><span class="n">02</span><h2>Gasto por subsistema</h2><span class="rule"></span></div>
+    <div class="card">
+      <div class="bars">
+        <div class="bar-row"><span class="bar-name">Herramientas / prototipado</span><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--cat-f)"></div></div><span class="bar-val">$56.60</span></div>
+        <div class="bar-row"><span class="bar-name">A · Núcleo ESP32</span><div class="bar-track"><div class="bar-fill" style="width:71%;background:var(--cat-a)"></div></div><span class="bar-val">$39.96</span></div>
+        <div class="bar-row"><span class="bar-name">D · Carga EcoFlow (LVD)</span><div class="bar-track"><div class="bar-fill" style="width:66%;background:var(--cat-d)"></div></div><span class="bar-val">$37.30</span></div>
+        <div class="bar-row"><span class="bar-name">E · Protección / cableado</span><div class="bar-track"><div class="bar-fill" style="width:53%;background:var(--cat-e)"></div></div><span class="bar-val">$29.81</span></div>
+        <div class="bar-row"><span class="bar-name">B · Energía (12V/5V)</span><div class="bar-track"><div class="bar-fill" style="width:21%;background:var(--cat-b)"></div></div><span class="bar-val">$11.99</span></div>
+        <div class="bar-row"><span class="bar-name">C · Ventilación (fan + driver)</span><div class="bar-track"><div class="bar-fill" style="width:16%;background:var(--cat-c)"></div></div><span class="bar-val">$9.14</span></div>
+      </div>
+    </div>
+    <p class="sub" style="margin-top:10px;font-size:13px">Barras a escala del ítem mayor ($56.60). "Herramientas" no es un subsistema del datalogger — es equipo de taller (cautín, alicates, destornilladores), gasto único que no se repite en unidades futuras.</p>
+  </section>
+
+  <section>
+    <div class="sec-h"><span class="n">03</span><h2>A revisar</h2><span class="rule"></span></div>
+    <div class="callouts">
+      <div class="warn"><span class="i">⚠️</span><span><b>DHT22 comprado 2 veces</b> (filas 18 y 27, 13/7 y 10/7): 4 unidades, $39.96 total. La BOM solo pedía 1 (ya en uso). Si no es para el multi-punto de temperatura (pregunta abierta §4.3 de MEMORY.md), son 2–3 de más — considera devolución.</span></div>
+      <div class="warn"><span class="i">📝</span><span><b>IRLZ44N sigue "EN CAMINO" en la hoja</b> pero ya confirmaste que lo tienes — actualiza el estado ahí para que el próximo corte de gastos sea exacto.</span></div>
+      <div class="warn"><span class="i">✅</span><span><b>LM2596 (filas 2 y 24) — resuelto:</b> uno alimenta el ESP32 desde el jack 12V del EcoFlow (esquema C, D23); los demás quedan de repuesto. El <b>PD Trigger ZY12PDN (fila 1) ya no se usa</b> — el jack da 12V directo.</span></div>
+      <div class="warn"><span class="i">❗</span><span><b>"Módulo Controlador de Carga de Batería 12V"</b> (fila 29, $9.99) no estaba en la BOM. Si reemplaza el circuito discreto de relé + sense de VBAT del esquema D, hay que rehacer ese esquemático — dime qué módulo es exactamente antes de seguir armando D.</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-h"><span class="n">04</span><h2>Detalle de compras</h2><span class="rule"></span></div>
+    <div class="card tbl-scroll">
+      <table>
+        <thead><tr><th>#</th><th>Componente</th><th>Cant.</th><th>Subsistema</th><th>Fecha</th><th>Estado</th><th class="money">Precio</th></tr></thead>
+        <tbody>
+          <tr><td>18/27</td><td>DHT22 (2 compras)</td><td>4</td><td><span class="tag">A</span></td><td>10 y 13/7</td><td><span class="pill ok">comprado</span></td><td class="money">$39.96</td></tr>
+          <tr><td>1</td><td>PD Trigger ZY12PDN</td><td>1</td><td><span class="tag">B</span></td><td>13/7</td><td><span class="pill ok">comprado</span></td><td class="money">$0.00</td></tr>
+          <tr><td>2</td><td>Buck MP1584/LM2596 (ESP32)</td><td>1</td><td><span class="tag">B</span></td><td>13/7</td><td><span class="pill ok">comprado</span></td><td class="money">$5.99</td></tr>
+          <tr><td>24</td><td>LM2596 adicional</td><td>2</td><td><span class="tag">B</span> <span class="tag">?</span></td><td>10/7</td><td><span class="pill ok">comprado</span></td><td class="money">$6.00</td></tr>
+          <tr><td>23</td><td>Fan cooler 12x12</td><td>2</td><td><span class="tag">C</span></td><td>10/7</td><td><span class="pill ok">comprado</span></td><td class="money">$5.00</td></tr>
+          <tr><td>3</td><td>MOSFET IRLZ44N</td><td>3</td><td><span class="tag">C/D</span></td><td>13/7</td><td><span class="pill pend">en camino*</span></td><td class="money">$0.00</td></tr>
+          <tr><td>4</td><td>Diodo 1N4007</td><td>5</td><td><span class="tag">C/D</span></td><td>13/7</td><td><span class="pill ok">comprado</span></td><td class="money">$2.76</td></tr>
+          <tr><td>7</td><td>Resistencia 220Ω</td><td>2</td><td><span class="tag">C/D</span></td><td>13/7</td><td><span class="pill ok">comprado</span></td><td class="money">$0.69</td></tr>
+          <tr><td>8</td><td>Resistencia 10kΩ</td><td>2</td><td><span class="tag">C/D</span></td><td>13/7</td><td><span class="pill ok">comprado</span></td><td class="money">$0.69</td></tr>
+          <tr><td>5</td><td>Relé Bosch 5p 40A</td><td>2</td><td><span class="tag">D</span></td><td>13/7</td><td><span class="pill ok">comprado</span></td><td class="money">$0.00</td></tr>
+          <tr><td>6</td><td>Zócalo/socket relé</td><td>2</td><td><span class="tag">D</span></td><td>13/7</td><td><span class="pill pend">en camino</span></td><td class="money">$5.52</td></tr>
+          <tr><td>9</td><td>Resistencia 100kΩ 1%</td><td>2</td><td><span class="tag">D</span></td><td>13/7</td><td><span class="pill ok">comprado</span></td><td class="money">$0.69</td></tr>
+          <tr><td>10</td><td>Resistencia 22kΩ 1%</td><td>2</td><td><span class="tag">D</span></td><td>13/7</td><td><span class="pill ok">comprado</span></td><td class="money">$0.69</td></tr>
+          <tr><td>11</td><td>Diodo Zener 3.3V</td><td>2</td><td><span class="tag">D</span></td><td>13/7</td><td><span class="pill ok">comprado</span></td><td class="money">$4.42</td></tr>
+          <tr><td>12</td><td>Capacitor 100nF</td><td>2</td><td><span class="tag">D</span></td><td>13/7</td><td><span class="pill ok">comprado</span></td><td class="money">$1.00</td></tr>
+          <tr><td>22</td><td>XL4016</td><td>1</td><td><span class="tag">D</span></td><td>10/7</td><td><span class="pill ok">comprado</span></td><td class="money">$11.99</td></tr>
+          <tr><td>28</td><td>Trimmer potenciómetro multivuelta</td><td>1</td><td><span class="tag">D</span> <span class="tag">?</span></td><td>13/7</td><td><span class="pill ok">comprado</span></td><td class="money">$3.00</td></tr>
+          <tr><td>29</td><td>Módulo controlador de carga 12V</td><td>1</td><td><span class="tag">D</span> <span class="tag">?</span></td><td>13/7</td><td><span class="pill ok">comprado</span></td><td class="money">$9.99</td></tr>
+          <tr><td>13</td><td>Fusible 10–15A + portafusible</td><td>1</td><td><span class="tag">E</span></td><td>13/7</td><td><span class="pill ok">comprado</span></td><td class="money">$0.00</td></tr>
+          <tr><td>14</td><td>Cable AWG 14–12</td><td>2m</td><td><span class="tag">E</span></td><td>13/7</td><td><span class="pill ok">comprado</span></td><td class="money">$8.50</td></tr>
+          <tr><td>15</td><td>Borneras/conectores</td><td>1</td><td><span class="tag">E</span></td><td>13/7</td><td><span class="pill pend">en camino</span></td><td class="money">$2.21</td></tr>
+          <tr><td>17</td><td>Termorretráctil surtido</td><td>1</td><td><span class="tag">E</span></td><td>13/7</td><td><span class="pill ok">comprado</span></td><td class="money">$2.00</td></tr>
+          <tr><td>25</td><td>Terminales pack 60</td><td>1</td><td><span class="tag">E</span></td><td>10/7</td><td><span class="pill ok">comprado</span></td><td class="money">$9.50</td></tr>
+          <tr><td>26</td><td>Conector 12V macho 2.1mm ×20</td><td>1</td><td><span class="tag">E</span></td><td>10/7</td><td><span class="pill ok">comprado</span></td><td class="money">$7.60</td></tr>
+          <tr><td>16</td><td>Mini protoboard</td><td>2</td><td><span class="tag">Taller</span></td><td>13/7</td><td><span class="pill ok">comprado</span></td><td class="money">$7.60</td></tr>
+          <tr><td>19</td><td>Kit cautín</td><td>1</td><td><span class="tag">Taller</span></td><td>10/7</td><td><span class="pill ok">comprado</span></td><td class="money">$15.00</td></tr>
+          <tr><td>20</td><td>Kit destornilladores</td><td>1</td><td><span class="tag">Taller</span></td><td>9/7</td><td><span class="pill ok">comprado</span></td><td class="money">$14.00</td></tr>
+          <tr><td>21</td><td>Kit alicates</td><td>1</td><td><span class="tag">Taller</span></td><td>9/7</td><td><span class="pill ok">comprado</span></td><td class="money">$20.00</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="sub" style="margin-top:10px;font-size:13px">*IRLZ44N: la hoja dice "en camino" pero ya confirmaste tenerlo — pendiente de actualizar en el CSV de origen.</p>
+  </section>
+
+  <footer>
+    Suspensiones Caracas · Proyecto 1 — Telemetría ESP32 · Este informe es de <b>gasto real</b> (post-compra). Para la <b>lista planificada</b> antes de comprar, ver <span class="mono">docs/PRESUPUESTO.csv</span>. Para el detalle de conexiones de cada componente, ver <span class="mono">C_esquema-nucleo-esp32.html</span> y <span class="mono">D_esquema-carga-ecoflow.html</span>. Documento local — abrir en el navegador.
+  </footer>
+</div>
+</body>
+</html>

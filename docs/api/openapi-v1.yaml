@@ -1,0 +1,434 @@
+openapi: 3.1.0
+info:
+  title: API Suspensiones Caracas — Telemetría y Control
+  version: "1.0.0"
+  description: |
+    API de **monitoreo y control seguro** de las unidades Centinela (maletas ESP32 ·
+    Starlink + EcoFlow). Pensada para que la app de Suspensiones CCS integre datos y
+    control **sin acoplarse a la base de datos interna**.
+
+    - **Auth:** header `X-API-Key`. La key cubre la flota autorizada; deny-by-default.
+    - **Frescura:** la unidad reporta cada ~5 s → pedir `latest` cada 5 s (más rápido re-lee la misma fila).
+    - **Control seguro:** `fan_mode` y `setpoint`. `power_cycle`/`reboot` están **bloqueados** en v1.
+    - **Errores:** RFC 9457 (`application/problem+json`).
+
+    Contrato completo: `docs/api/CONTRATO-v1.md`.
+  contact:
+    name: Suspensiones Caracas — Ingeniería (Luis R. Gómez)
+  license:
+    name: Uso interno · Suspensiones Caracas
+
+servers:
+  - url: https://{projectRef}.supabase.co/functions/v1/api-v1
+    description: Supabase Edge Function (MVP)
+    variables:
+      projectRef:
+        default: ntqdrkbzntcfwwenawxy
+  - url: https://api.suspensiones.example/v1
+    description: Dominio propio (producción, opcional)
+
+security:
+  - ApiKeyAuth: []
+
+tags:
+  - name: Monitoreo
+    description: Lectura de telemetría, estado y eventos (scope `read`).
+  - name: Control
+    description: Comandos seguros y configuración (scope `control`).
+
+paths:
+  /devices:
+    get:
+      tags: [Monitoreo]
+      operationId: listDevices
+      summary: Lista las unidades autorizadas
+      description: Devuelve las unidades que la API-key puede ver (toda la flota si `device_ids = "*"`).
+      responses:
+        "200":
+          description: Lista de unidades
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  devices:
+                    type: array
+                    items: { $ref: "#/components/schemas/Device" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
+  /devices/{id}:
+    get:
+      tags: [Monitoreo]
+      operationId: getDevice
+      summary: Detalle de una unidad
+      parameters: [{ $ref: "#/components/parameters/DeviceId" }]
+      responses:
+        "200":
+          description: Unidad
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Device" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /devices/{id}/latest:
+    get:
+      tags: [Monitoreo]
+      operationId: getLatestReading
+      summary: Última lectura (snapshot en vivo)
+      description: Endpoint principal de polling. **Recomendado cada 5 s.** El polling no toca el hardware.
+      parameters: [{ $ref: "#/components/parameters/DeviceId" }]
+      responses:
+        "200":
+          description: Snapshot
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  device_id: { type: string, format: uuid }
+                  status: { $ref: "#/components/schemas/DeviceStatus" }
+                  reading: { $ref: "#/components/schemas/Reading" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /devices/{id}/telemetry:
+    get:
+      tags: [Monitoreo]
+      operationId: getTelemetry
+      summary: Histórico de telemetría por rango
+      parameters:
+        - { $ref: "#/components/parameters/DeviceId" }
+        - name: from
+          in: query
+          description: Inicio del rango (ISO 8601). Por defecto, 1 h atrás.
+          schema: { type: string, format: date-time }
+        - name: to
+          in: query
+          description: Fin del rango (ISO 8601). Por defecto, ahora.
+          schema: { type: string, format: date-time }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 5000, default: 500 }
+        - name: order
+          in: query
+          schema: { type: string, enum: [asc, desc], default: asc }
+      responses:
+        "200":
+          description: Serie de lecturas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  device_id: { type: string, format: uuid }
+                  count: { type: integer }
+                  from: { type: string, format: date-time }
+                  to: { type: string, format: date-time }
+                  readings:
+                    type: array
+                    items: { $ref: "#/components/schemas/Reading" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /devices/{id}/events:
+    get:
+      tags: [Monitoreo]
+      operationId: listEvents
+      summary: Bitácora de alertas / eventos
+      parameters:
+        - { $ref: "#/components/parameters/DeviceId" }
+        - name: since
+          in: query
+          schema: { type: string, format: date-time }
+        - name: severity
+          in: query
+          description: Severidad mínima a incluir.
+          schema: { type: string, enum: [info, warning, serious, critical] }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 1000, default: 100 }
+      responses:
+        "200":
+          description: Eventos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  events:
+                    type: array
+                    items: { $ref: "#/components/schemas/Event" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /devices/{id}/commands:
+    get:
+      tags: [Monitoreo]
+      operationId: listCommands
+      summary: Historial de comandos y su estado de aplicación
+      parameters:
+        - { $ref: "#/components/parameters/DeviceId" }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 200, default: 20 }
+        - name: status
+          in: query
+          schema: { type: string, enum: [pending, applied] }
+      responses:
+        "200":
+          description: Comandos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  commands:
+                    type: array
+                    items: { $ref: "#/components/schemas/Command" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      tags: [Control]
+      operationId: sendCommand
+      summary: Enviar un comando seguro a la unidad
+      description: |
+        Encola un comando. La unidad lo aplica en **≤5 s** y confirma (consultar estado con `GET .../commands`).
+        Solo `fan_mode` y `setpoint`. `power_cycle`/`reboot` → `403` (bloqueados en v1).
+      parameters: [{ $ref: "#/components/parameters/DeviceId" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CommandRequest" }
+            examples:
+              fanAuto:
+                summary: Fan en modo automático
+                value: { type: fan_mode, payload: { mode: auto } }
+              setpoint:
+                summary: Enciende a 40 °C, apaga a 35 °C
+                value: { type: setpoint, payload: { on: 40, off: 35 } }
+      responses:
+        "202":
+          description: Comando aceptado y encolado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Command" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+
+  /devices/{id}/config:
+    patch:
+      tags: [Control]
+      operationId: updateConfig
+      summary: Actualizar umbrales de alarma
+      description: Umbrales de **alarma** (disparan estados/alertas), no controlan el fan. Requiere `warn < serious < crit`.
+      parameters: [{ $ref: "#/components/parameters/DeviceId" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [thresholds]
+              properties:
+                thresholds: { $ref: "#/components/schemas/Thresholds" }
+            examples:
+              default:
+                value: { thresholds: { warn: 33, serious: 40, crit: 46 } }
+      responses:
+        "200":
+          description: Unidad actualizada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Device" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: Key emitida por Suspensiones Caracas. Revocable, con scope de flota y acciones.
+
+  parameters:
+    DeviceId:
+      name: id
+      in: path
+      required: true
+      description: UUID de la unidad Centinela.
+      schema: { type: string, format: uuid }
+
+  schemas:
+    DeviceStatus:
+      type: string
+      enum: [online, stale, offline]
+      description: Derivado de la antigüedad de la última lectura.
+
+    Thresholds:
+      type: object
+      description: Umbrales de alarma en °C (warn < serious < crit).
+      required: [warn, serious, crit]
+      properties:
+        warn: { type: number }
+        serious: { type: number }
+        crit: { type: number }
+
+    Device:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, examples: ["Centinela 01"] }
+        fw_version: { type: [string, "null"] }
+        thresholds: { $ref: "#/components/schemas/Thresholds" }
+        last_seen: { type: [string, "null"], format: date-time }
+        status: { $ref: "#/components/schemas/DeviceStatus" }
+
+    Reading:
+      type: object
+      description: Una muestra de telemetría. `ts` sellado en origen (GPS/NTP). Campos de integración van null hasta que exista el hardware.
+      properties:
+        ts: { type: string, format: date-time }
+        temp_c: { type: [number, "null"], description: "T° aire interior (°C)" }
+        temp_points:
+          type: [object, "null"]
+          additionalProperties: { type: number }
+          description: "Multi-punto futuro, ej. {intake, starlink}"
+        fan_on: { type: [boolean, "null"] }
+        fan_duty: { type: [integer, "null"], minimum: 0, maximum: 100 }
+        fan_rpm: { type: [integer, "null"] }
+        lat: { type: [number, "null"] }
+        lng: { type: [number, "null"] }
+        alt: { type: [number, "null"] }
+        speed_kmph: { type: [number, "null"] }
+        course: { type: [number, "null"] }
+        sats: { type: [integer, "null"] }
+        hdop: { type: [number, "null"] }
+        rssi: { type: [integer, "null"], description: "Señal WiFi (dBm)" }
+        uptime_s: { type: [integer, "null"] }
+        heap_free: { type: [integer, "null"] }
+        batt_soc: { type: [integer, "null"], minimum: 0, maximum: 100, description: "% batería EcoFlow (futuro)" }
+        power_w: { type: [number, "null"], description: "Consumo W (futuro)" }
+        link_obstruction: { type: [number, "null"], description: "Obstrucción Starlink (futuro)" }
+        link_down_mbps: { type: [number, "null"], description: "Bajada Starlink Mbps (futuro)" }
+
+    Command:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        ts: { type: string, format: date-time }
+        type: { type: string, enum: [fan_mode, setpoint] }
+        payload: { type: object, additionalProperties: true }
+        status:
+          type: string
+          enum: [pending, applied]
+          description: Derivado de si la unidad ya confirmó el comando.
+        applied_at: { type: [string, "null"], format: date-time }
+
+    Event:
+      type: object
+      properties:
+        id: { type: integer }
+        ts: { type: string, format: date-time }
+        kind:
+          type: string
+          enum: [over_temp, fast_heating, offline, gps_lost, geofence, tamper, low_battery, link_obstruction]
+        severity: { type: string, enum: [info, warning, serious, critical] }
+        message: { type: [string, "null"] }
+
+    CommandRequest:
+      oneOf:
+        - $ref: "#/components/schemas/FanModeCommand"
+        - $ref: "#/components/schemas/SetpointCommand"
+      discriminator:
+        propertyName: type
+
+    FanModeCommand:
+      type: object
+      required: [type, payload]
+      properties:
+        type: { const: fan_mode }
+        payload:
+          type: object
+          required: [mode]
+          properties:
+            mode:
+              type: string
+              enum: [auto, "on", "off"]
+              description: auto = histéresis por T°; on/off = override manual.
+
+    SetpointCommand:
+      type: object
+      required: [type, payload]
+      properties:
+        type: { const: setpoint }
+        payload:
+          type: object
+          required: [on, off]
+          properties:
+            on: { type: number, description: "°C a los que enciende el fan" }
+            off: { type: number, description: "°C a los que apaga el fan (off < on)" }
+
+    Problem:
+      type: object
+      description: Error en formato RFC 9457 (application/problem+json).
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        instance: { type: string }
+
+  responses:
+    BadRequest:
+      description: Body/parámetros inválidos (validación)
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+          example:
+            type: "https://api.suspensiones/errors/validation"
+            title: "Payload inválido"
+            status: 400
+            detail: "payload.mode debe ser uno de: auto, on, off. Recibido: 'fast'."
+            instance: "/devices/0000…0001/commands"
+    Unauthorized:
+      description: Falta la API-key, es inválida o está revocada
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    Forbidden:
+      description: Unidad fuera de scope o acción bloqueada (power_cycle/reboot)
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+          example:
+            type: "https://api.suspensiones/errors/action-not-available"
+            title: "Acción no disponible en v1"
+            status: 403
+            detail: "power_cycle y reboot no se exponen vía API por seguridad."
+            instance: "/devices/0000…0001/commands"
+    NotFound:
+      description: La unidad no existe
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    Unprocessable:
+      description: Semántica inválida (ej. setpoint.off ≥ setpoint.on)
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    RateLimited:
+      description: Límite de uso excedido (incluye header Retry-After)
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }

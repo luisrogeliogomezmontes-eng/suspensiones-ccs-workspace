@@ -1,0 +1,33 @@
+Categoria,Componente,Descripcion / Para que se uso,Cantidad,Precio unit (Bs),Precio unit ($),Precio total ($),Lugar de compra,Link de compra,Estado,Fecha compra,Notas
+# Tasa de referencia Bs/$ =,,,,,,,,,,,ajustar y aplicar en la columna $ (o formula =Bs/tasa)
+# --- POR COMPRAR (compra unica: nucleo ESP32 + subsistema de carga) ---,,,,,,,,,,,
+Prototipo descartado,Modulo PD Trigger ZY12PDN,YA NO SE USA (D23): el jack 12V del EcoFlow da 12V directo,1,,,,,,Descartado,,comprado; queda de repuesto
+Componente fijo,Modulo Buck DC-DC LM2596,Baja 12V (jack EcoFlow) -> 5V para el ESP32 (VIN),1,,,,,,Comprado,,ajustar salida a 5.0V; >=1A
+Componente fijo,Cable jack DC 5.5x2.1,EcoFlow salida 12V -> bornera Y (fan + buck),1,,,,,,Por armar,,plugs macho comprados (pack x20)
+Consumible,Jumper bypass 30-87 (terminales propios),Recuperacion manual si EcoFlow/ESP32 apagados (D24); interruptor fijo opcional,1,,,,,,Por armar,,anti-deadlock; se hace con terminales ya comprados
+Componente fijo,MOSFET IRLZ44N,Driver del fan (GPIO26); el del rele YA NO se usa (D25: modulo autonomo conmuta la bobina),3,,,,,,Comprado,,logic-level Vgs@3.3V; 2 quedan de repuesto
+Componente fijo,Diodo 1N4007,Flyback fan + flyback rele + repuestos,5,,,,,,Por comprar,,
+Componente fijo,Rele Bosch 5 pines 12V 40A (sellado),Corte de carga del EcoFlow por histeresis de VBAT,2,,,,,,Por comprar,,en serie con entrada del XL4016; 1 repuesto
+Componente fijo,Zocalo/socket para rele (con cables),Montaje del rele sin soldar patas,2,,,,,,Por comprar,,
+Consumible,Resistencia 220 Ohm 1/4W,Gate del MOSFET (fan + rele),2,,,,,,Por comprar,,
+Consumible,Resistencia 10 kOhm 1/4W,Pulldown de gate (fan + rele),2,,,,,,Por comprar,,fail-safe del gate
+Consumible,Resistencia 100 kOhm 1%,Divisor sense de VBAT (arriba),2,,,,,,Por comprar,,ADC1 GPIO34
+Consumible,Resistencia 22 kOhm 1%,Divisor sense de VBAT (abajo),2,,,,,,Por comprar,,con 100k da ~2.7V @15V
+Consumible,Diodo Zener 3.3V,Clamp de proteccion del pin ADC,2,,,,,,Por comprar,,+ RC contra transitorios
+Consumible,Capacitor ceramico 100 nF,Filtro del ADC,2,,,,,,Por comprar,,
+Componente fijo,Fusible 10-15A + portafusible,Proteccion en linea de carga (moto),1,,,,,,Por comprar,,
+Consumible,Cable AWG 14-12,Linea de carga ~8A,2 m,,,,,,Por comprar,,
+Consumible,Borneras / conectores de potencia,Uniones de potencia,varios,,,,,,Por comprar,,
+Componente fijo,Mini perfboard o bornera de distribucion,Distribucion de rieles + GND comun,1,,,,,,Por comprar,,
+Consumible,Termorretractil surtido,Aislar uniones,1,,,,,,Por comprar,,
+# --- YA SE TIENE (no comprar) ---,,,,,,,,,,,
+Componente fijo,ESP32-WROOM-32 DevKit,MCU principal telemetria+control,1,,,,,,En uso,,
+Componente fijo,GPS u-blox NEO + antena,Geolocalizacion UART2 (GPIO16/17),1,,,,,,En uso,,fix real confirmado
+Componente fijo,DHT22,Sensor temp/humedad (GPIO4),1,,,,,,En uso,,
+Componente fijo,Fan 12V 0.2A 120mm,Ventilacion; alimentado del riel 12V,1,,,,,,En uso,,on/off por MOSFET
+Componente fijo,Modulo XL4016,Regulador V/I de la carga del EcoFlow,1,,,,,,En uso,,buck ajustable ~8A
+Componente fijo,Protoboard + jumpers,Prototipado,1,,,,,,En uso,,
+Herramienta,Multimetro,Medicion V/A en pruebas,1,,,,,,Herramienta,,
+# --- DESCARTADOS (probados y NO usados) ---,,,,,,,,,,,
+Prototipo descartado,Modulo MOSFET opto-aislado,Driver del fan (descartado),0,,,,,,Descartado,,$80 y sin stock -> no rentable
+Prototipo descartado,Modulo MOSFET IRF520,Driver del fan (descartado),0,,,,,,Descartado,,IRF520 no es logic-level: no satura a 3.3V de gate

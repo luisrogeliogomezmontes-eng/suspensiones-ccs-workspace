@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Informes · Suspensiones P1</title>
+<style>
+  :root{--bg:#eef1f5;--surface:#fff;--ink:#13202e;--muted:#5a6b7c;--border:#d2dbe5;--accent:#0ea5b7;--accent-ink:#0a7c8a}
+  @media (prefers-color-scheme:dark){:root{--bg:#0d1621;--surface:#141f2b;--ink:#e6eef6;--muted:#93a4b6;--border:#26323f;--accent:#1fc0d2;--accent-ink:#5fd6e4}}
+  :root[data-theme="light"]{--bg:#eef1f5;--surface:#fff;--ink:#13202e;--muted:#5a6b7c;--border:#d2dbe5;--accent:#0ea5b7;--accent-ink:#0a7c8a}
+  :root[data-theme="dark"]{--bg:#0d1621;--surface:#141f2b;--ink:#e6eef6;--muted:#93a4b6;--border:#26323f;--accent:#1fc0d2;--accent-ink:#5fd6e4}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:48px 22px}
+  .wrap{max-width:640px;margin:0 auto}
+  .eyebrow{font:600 12px/1 ui-monospace,monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--accent-ink);margin-bottom:10px}
+  h1{font-size:26px;margin:0 0 28px}
+  a.card{display:block;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-bottom:12px;text-decoration:none;color:var(--ink);box-shadow:0 1px 2px rgba(20,40,60,.06),0 8px 24px rgba(20,40,60,.06)}
+  a.card:hover{border-color:var(--accent)}
+  a.card .t{font-weight:700;font-size:15.5px}
+  a.card .d{color:var(--muted);font-size:13.5px;margin-top:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">Suspensiones Caracas · Proyecto 1</div>
+  <h1>Informes técnicos</h1>
+  <a class="card" href="C_esquema-nucleo-esp32.html"><div class="t">C · Núcleo ESP32 — mapa de conexiones</div><div class="d">GPS, DHT22, driver del fan, alimentación 12V/5V</div></a>
+  <a class="card" href="D_esquema-carga-ecoflow.html"><div class="t">D · Subsistema de carga — LVD con histéresis</div><div class="d">Batería moto, relé, sense de VBAT, XL4016</div></a>
+  <a class="card" href="E_informe-gastos.html"><div class="t">E · Informe de gastos</div><div class="d">Gasto real por subsistema, estado de compra, alertas</div></a>
+  <a class="card" href="F_arquitectura.html"><div class="t">F · Arquitectura del sistema</div><div class="d">Diagrama completo: sensores → ESP32 → Starlink → Supabase → dashboard + energía/carga. Para presentar (Figma).</div></a>
+  <a class="card" href="C_MANUAL-OPERACION.md"><div class="t">Manual de operación</div><div class="d">Markdown — abrir con editor de texto</div></a>
+  <a class="card" href="A_MEMORIA-TECNICA.md"><div class="t">Memoria técnica</div><div class="d">Markdown — abrir con editor de texto</div></a>
+  <a class="card" href="B_INFORME-PROCESO.md"><div class="t">Informe de proceso</div><div class="d">Markdown — abrir con editor de texto</div></a>
+</div>
+</body>
+</html>

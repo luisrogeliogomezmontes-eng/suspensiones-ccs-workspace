@@ -1,0 +1,7 @@
+# Config del CLI de Supabase para este proyecto.
+# La API pública v1 usa su propia auth (X-API-Key), NO el JWT de Supabase →
+# verify_jwt=false para que el gateway no bloquee a los consumidores.
+project_id = "suspensiones-caracas"
+
+[functions.api-v1]
+verify_jwt = false

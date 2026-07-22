@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arquitectura — Telemetría ESP32 · Suspensiones Caracas</title>
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 28px;
+    font-family: Inter, "Segoe UI", system-ui, Arial, sans-serif;
+    background: #f1f5f9; color: #0f172a;
+  }
+  .wrap { max-width: 1240px; margin: 0 auto; }
+  .card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(15,23,42,.08); overflow: hidden;
+  }
+  .bar { padding: 22px 28px 16px; border-bottom: 1px solid #eef2f7; }
+  .bar h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.2px; }
+  .bar p  { margin: 6px 0 0; font-size: 14px; color: #475569; }
+  .chips { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { font-size: 12px; font-weight: 600; padding: 5px 11px; border-radius: 999px; border: 1px solid transparent; }
+  .c-green { background: #dcfce7; color: #15803d; border-color: #86efac; }
+  .c-amber { background: #fef9c3; color: #a16207; border-color: #fde68a; }
+  .c-indigo{ background: #e0e7ff; color: #3730a3; border-color: #c7d2fe; }
+  .canvas { padding: 20px; overflow-x: auto; background:
+    repeating-linear-gradient(45deg,#fbfcfe,#fbfcfe 12px,#f8fafc 12px,#f8fafc 24px); }
+  .canvas img { display: block; width: 100%; height: auto; min-width: 900px; margin: 0 auto; }
+  .foot { padding: 14px 28px 22px; font-size: 12.5px; color: #64748b; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+  .foot a { color: #6d28d9; text-decoration: none; font-weight: 600; }
+
+  /* --- Detalle del driver del fan --- */
+  .card + .card { margin-top: 20px; }
+  .sec { padding: 22px 28px 26px; }
+  .sec h2 { margin: 0 0 4px; font-size: 19px; font-weight: 700; letter-spacing: -.2px; }
+  .sec .lead { margin: 0 0 18px; font-size: 14px; color: #475569; max-width: 70ch; }
+  .callout { display: flex; gap: 11px; padding: 13px 15px; border-radius: 12px; font-size: 13.5px; margin: 0 0 16px; line-height: 1.5; }
+  .callout .ic { flex: 0 0 auto; font-size: 15px; }
+  .callout.warn { background: #fef9c3; border: 1px solid #fde68a; color: #854d0e; }
+  .callout.ok   { background: #dcfce7; border: 1px solid #86efac; color: #166534; }
+  .callout b { font-weight: 700; }
+  .sch { margin: 0 0 18px; padding: 16px 18px; background: #0f172a; color: #e2e8f0; border-radius: 12px;
+         font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; line-height: 1.65;
+         white-space: pre; overflow-x: auto; }
+  .sch .p12 { color: #fca5a5; } .sch .p5 { color: #fcd34d; } .sch .sig { color: #93c5fd; }
+  .sch .gnd { color: #94a3b8; } .sch .cmp { color: #6ee7b7; }
+  .x { overflow-x: auto; }
+  table.steps { border-collapse: collapse; width: 100%; min-width: 520px; font-size: 13.5px; }
+  table.steps th, table.steps td { text-align: left; padding: 9px 13px; border-bottom: 1px solid #eef2f7; vertical-align: top; }
+  table.steps thead th { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #64748b; font-weight: 700; }
+  table.steps td:first-child { color: #94a3b8; font-weight: 700; width: 30px; }
+  table.steps tbody tr:last-child td { border-bottom: none; }
+  .steps code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; background: #f1f5f9; padding: 1px 6px; border-radius: 5px; }
+  table.steps tr.grp td { background: #eef2f7; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: #475569; }
+  table.steps td.ok { color: #15803d; font-weight: 700; } table.steps td.bad { color: #b91c1c; font-weight: 700; } table.steps td.mid { color: #a16207; font-weight: 700; }
+  .subh { margin: 24px 0 12px; font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #6d28d9; }
+  .hyst { margin: 0; padding-left: 20px; font-size: 13.5px; line-height: 1.7; color: #334155; }
+  .hyst li { margin-bottom: 5px; } .hyst code { font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; background: #f1f5f9; padding: 1px 6px; border-radius: 5px; }
+
+  @media (prefers-color-scheme: dark) {
+    body { background: #0b1220; color: #e2e8f0; }
+    .card { background: #0f172a; border-color: #1e293b; box-shadow: none; }
+    .bar { border-color: #1e293b; } .bar p { color: #94a3b8; }
+    .canvas { background: #0b1220; }
+    .foot { color: #94a3b8; }
+    .sec .lead { color: #94a3b8; }
+    .callout.warn { background: #2a2011; border-color: #5c451f; color: #f2c98a; }
+    .callout.ok   { background: #0f2a1a; border-color: #1f5c38; color: #86efac; }
+    .sch { background: #060b16; border: 1px solid #1e293b; }
+    table.steps th, table.steps td { border-color: #1e293b; }
+    table.steps thead th { color: #94a3b8; }
+    .steps code, .hyst code { background: #1e293b; color: #e2e8f0; }
+    .subh { color: #a78bfa; } .hyst { color: #cbd5e1; }
+    table.steps tr.grp td { background: #16202e; color: #94a3b8; }
+    table.steps td.ok { color: #4ade80; } table.steps td.bad { color: #f87171; } table.steps td.mid { color: #fbbf24; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="bar">
+        <h1>Sistema de Telemetría ESP32 — Suspensiones Caracas</h1>
+        <p>Arquitectura del sistema · Depto. Eléctrica / Electrónica · Proyecto 1</p>
+        <div class="chips">
+          <span class="chip c-green">Fase 2 ✅ desplegado</span>
+          <span class="chip c-amber">Fase 3 ⏳ control + auth</span>
+          <span class="chip c-indigo">BOM $184.80</span>
+        </div>
+      </div>
+      <div class="canvas">
+        <img src="F_arquitectura.svg" alt="Diagrama de arquitectura: sensores → ESP32 → Starlink → Supabase → dashboard, más subsistemas de energía y carga">
+      </div>
+      <div class="foot">
+        <span>Unidad móvil: maleta de moto (~40×60×70 cm) · EcoFlow + Starlink · Monitorear temperatura = proteger el equipo del calor</span>
+        <span>Versión simple para Figma: <a href="F_arquitectura_simple.svg">F_arquitectura_simple.svg</a></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sec">
+        <h2>Dos fans PWM — conexiones y control de corriente</h2>
+        <p class="lead"><b>2 fans</b> de 12&nbsp;V · ~2.7&nbsp;A c/u, 4 hilos, con driver interno. El ESP32 les manda
+          <b>velocidad</b> por el hilo azul (PWM 25&nbsp;kHz). El reto: el <b>conector DC 2.1&nbsp;mm aguanta 5&nbsp;A</b>
+          y dos fans a tope suman 5.4&nbsp;A → <b>se limita el duty por firmware</b> para no calentar el conector. Decidido en <b>D26</b>.</p>
+
+        <div class="callout ok">
+          <span class="ic">✅</span>
+          <span><b>Colores confirmados:</b> rojo+negro a 12&nbsp;V hacen girar el fan a full → <b>rojo=+12V, negro=GND</b>.
+          Quedan <b>azul=PWM, amarillo=tach</b> (estándar; se confirma con la prueba de PWM).</span>
+        </div>
+
+        <p class="subh">1 · Presupuesto de corriente en el conector 2.1&nbsp;mm (5&nbsp;A máx)</p>
+        <p class="lead" style="margin-bottom:12px">La corriente que calienta el conector = 2 fans + ESP32. El ESP32 en el lado 12&nbsp;V ≈
+          0.5&nbsp;A×5V ÷ 12V ÷ 0.85 ≈ <b>0.3&nbsp;A</b> (casi nada). Los fans se escalan con el PWM:</p>
+        <div class="x">
+          <table class="steps">
+            <thead><tr><th>Tope PWM</th><th>2 fans (peor caso lineal)</th><th>+ ESP32</th><th>Total conector</th><th>Veredicto</th></tr></thead>
+            <tbody>
+              <tr><td>100%</td><td>2×2.7 = 5.4&nbsp;A</td><td>0.3&nbsp;A</td><td>5.7&nbsp;A</td><td class="bad">❌ excede 5&nbsp;A</td></tr>
+              <tr><td>85%</td><td>4.6&nbsp;A</td><td>0.3&nbsp;A</td><td>4.9&nbsp;A</td><td class="mid">⚠ al filo</td></tr>
+              <tr><td>75%</td><td>4.05&nbsp;A</td><td>0.3&nbsp;A</td><td>4.35&nbsp;A</td><td class="ok">✅ con margen</td></tr>
+              <tr><td><b>70%</b> (recom.)</td><td>3.8&nbsp;A</td><td>0.3&nbsp;A</td><td><b>4.1&nbsp;A</b></td><td class="ok">✅ conector frío</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout ok" style="margin-top:12px">
+          <span class="ic">↓</span>
+          <span>El cálculo es <b>lineal = peor caso</b>. Un fan PWM real a 70% consume bastante menos que el 70%
+          de su corriente → la real seguramente sea <b>~3–3.3&nbsp;A</b>. Firmware arranca con <code>FAN_MAX_DUTY = 70</code>;
+          se mide y se ajusta. A 70% el flujo de aire de estos fans grandes sigue siendo de sobra.</span>
+        </div>
+
+        <p class="subh">2 · Diagrama de conexión (2 fans en paralelo)</p>
+        <div class="sch"><span class="p12">EcoFlow jack 12V</span> (6.9A max)
+      │ (+)
+ [<span class="p12">conector DC 2.1mm — 5A máx</span>]  ◄── aquí se mide la corriente total
+      │
+   ┌──┴─ <span class="p12">Nodo +12V</span> (bornera) ──────────┬───────────────┐
+   │                                    │               │
+ <span class="p12">Fan A rojo</span>                            <span class="p12">Fan B rojo</span>       <span class="p5">Buck VIN</span> → <span class="p5">5V</span> → ESP32 VIN
+
+ <span class="gnd">Nodo GND</span> (bornera): jack(−) · Fan A negro · Fan B negro · Buck GND · ESP32 GND
+
+ <span class="sig">GPIO26</span> (PWM 25kHz) ─►┬─ <span class="sig">Fan A azul</span>
+                        └─ <span class="sig">Fan B azul</span>      (mismo pin → mismo duty)
+ <span class="sig">GPIO27</span> ◄──[10k ↑ 3V3]──── <span class="p5">Fan A amarillo</span> (tach)   ·   Fan B amarillo: sin conectar</div>
+
+        <p class="subh">3 · Pin por pin — cada hilo, a dónde y cómo</p>
+        <div class="x">
+          <table class="steps">
+            <thead><tr><th>Desde</th><th>Hilo / pin</th><th>Hasta</th><th>Cómo / nota</th></tr></thead>
+            <tbody>
+              <tr class="grp"><td colspan="4">Tronco de potencia</td></tr>
+              <tr><td>EcoFlow jack (+)</td><td>—</td><td>Conector 2.1&nbsp;mm macho (+)</td><td>plug DC ya comprado · aguanta 5&nbsp;A</td></tr>
+              <tr><td>Conector (+)</td><td>—</td><td><b>Nodo +12V</b> (bornera)</td><td>punto donde se mide la corriente total</td></tr>
+              <tr><td>EcoFlow jack (−)</td><td>—</td><td><b>Nodo GND</b> (bornera)</td><td>tierra única de todo</td></tr>
+              <tr><td>Buck OUT</td><td>5&nbsp;V</td><td>ESP32 <code>VIN</code></td><td>⚠ ajustar buck a 5.0&nbsp;V antes de conectar</td></tr>
+              <tr class="grp"><td colspan="4">Fan A (4 hilos)</td></tr>
+              <tr><td>Fan A</td><td><b>rojo</b> · +12V</td><td>Nodo +12V</td><td>en paralelo con Fan B</td></tr>
+              <tr><td>Fan A</td><td><b>negro</b> · GND</td><td>Nodo GND</td><td>—</td></tr>
+              <tr><td>Fan A</td><td><b>azul</b> · PWM</td><td>ESP32 <code>GPIO26</code></td><td>junto con el azul de Fan B (mismo pin)</td></tr>
+              <tr><td>Fan A</td><td><b>amarillo</b> · tach</td><td>ESP32 <code>GPIO27</code></td><td>+ resistencia <b>10&nbsp;kΩ a 3.3&nbsp;V</b> (pull-up)</td></tr>
+              <tr class="grp"><td colspan="4">Fan B (4 hilos)</td></tr>
+              <tr><td>Fan B</td><td><b>rojo</b> · +12V</td><td>Nodo +12V</td><td>en paralelo con Fan A</td></tr>
+              <tr><td>Fan B</td><td><b>negro</b> · GND</td><td>Nodo GND</td><td>—</td></tr>
+              <tr><td>Fan B</td><td><b>azul</b> · PWM</td><td>ESP32 <code>GPIO26</code></td><td>mismo pin que Fan A → misma velocidad</td></tr>
+              <tr><td>Fan B</td><td><b>amarillo</b> · tach</td><td>— sin conectar</td><td>aíslalo con termo; 2º tach = pin futuro</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout warn" style="margin-top:16px">
+          <span class="ic">⚡</span>
+          <span><b>¿Por qué un solo <code>GPIO26</code> mueve los dos fans?</b> La entrada PWM es de alta impedancia
+          (solo señal, μA): un pin empuja las dos sin problema y ambos giran al mismo duty. El tach sí es 1 por fan
+          → se lee solo el de Fan A (ambos corren igual, si querés los dos hace falta un 2º pin).</span>
+        </div>
+
+        <p class="subh">4 · Cómo asegurarte de que va bajo 5&nbsp;A</p>
+        <ul class="hyst">
+          <li><b>Medir</b>: multímetro en <b>modo corriente DC (jack 10&nbsp;A)</b> en serie con el <b>Nodo +12V</b> (corta la línea, mete el tester en medio). Con los fans al tope (`FAN_MAX_DUTY`) debe leer <b>&lt; 5&nbsp;A</b> (objetivo ~4&nbsp;A). ⚠ no excedas el fusible de 10&nbsp;A del tester.</li>
+          <li><b>Ajustar</b>: si mide alto, baja <code>FAN_MAX_DUTY</code> y reflashea; si sobra margen, súbelo. Cada cambio → re-mide.</li>
+          <li><b>Prueba de temperatura (la real)</b>: deja los 2 fans al tope 10–15&nbsp;min y toca el conector (o IR): debe quedar <b>apenas tibio</b>. Eso prueba que no se recalienta.</li>
+          <li><b>Inrush</b>: el firmware arranca en 0% y sube por rampa (<code>FAN_SLEW_PER_TICK</code>) → los dos fans no golpean el conector de golpe al encender.</li>
+        </ul>
+
+        <p class="subh">5 · Control (firmware)</p>
+        <ul class="hyst">
+          <li><b>Tope duro</b> <code>FAN_MAX_DUTY = 70%</code>: ningún camino lo supera, ni el fail-safe → el conector nunca ve más de ~4&nbsp;A.</li>
+          <li><b>Banda proporcional</b>: <code>temp ≤ TEMP_OFF</code> → 0%; <code>≥ TEMP_ON</code> → 70% (tope); en medio, rampa desde <code>FAN_MIN_DUTY</code> (30%).</li>
+          <li><b>Soft-start</b> <code>FAN_SLEW_PER_TICK = 20%</code>/s: sube/baja suave (0→70% en ~4&nbsp;s), evita el inrush.</li>
+          <li><b>Override remoto</b> (I3.2): <code>FAN_ON</code>=tope / <code>FAN_OFF</code>=0 / <code>FAN_AUTO</code>=rampa. <b>Fail-safe</b>: DHT22 caído → tope.</li>
+        </ul>
+      </div>
+
+      <div class="foot">
+        <span>Esquema a nivel de pin (diagrama del núcleo): <a href="C_esquema-nucleo-esp32.html">C_esquema-nucleo-esp32.html</a></span>
+        <span>Control: <code style="font-family:ui-monospace,Menlo,monospace">firmware.ino</code> · <code style="font-family:ui-monospace,Menlo,monospace">applyFanControl()</code> · <code style="font-family:ui-monospace,Menlo,monospace">config.h</code></span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
