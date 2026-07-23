@@ -63,6 +63,11 @@ constexpr uint32_t REPORT_PERIOD_MS  = 2000;
   #define HAS_TEMP_SENSOR 1
 #endif
 
+// ---- Versión de firmware (OTA / dashboard) ----
+// Subir en CADA build que se publique a la flota. Se imprime al bootear y sirve
+// para saber qué imagen corre cada unidad tras un OTA. Formato libre (fecha/tag).
+constexpr const char* FW_VERSION = "p1-2026.07.23";
+
 // ---- Telemetría (Fase 2): ESP32 → HTTPS POST → Supabase ----
 constexpr uint32_t TELEMETRY_PERIOD_MS = 5000;   // 1 fila cada 5 s (ajustar por costo Starlink)
 constexpr uint32_t COMMAND_POLL_MS     = 5000;   // I3.2: revisa comandos pendientes cada 5 s

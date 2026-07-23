@@ -4,13 +4,14 @@ import { useEffect, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabase, DEFAULT_DEVICE_ID, FORCE_DEMO } from "./supabase/client";
 
-// Espeja el enum command_type del esquema (0001).
+// Espeja el enum command_type del esquema (0001 + 0011 `ota`).
 export type CommandType =
   | "fan_mode"
   | "setpoint"
   | "hysteresis"
   | "power_cycle"
-  | "reboot";
+  | "reboot"
+  | "ota"; // actualización remota de firmware (payload: {url, md5?, version?})
 
 export interface Command {
   id: string;

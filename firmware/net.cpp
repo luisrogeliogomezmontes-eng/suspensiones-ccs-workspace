@@ -12,6 +12,7 @@
 #include "config.h"
 #include "secrets.h"
 #include "gps.h"
+#include "ota.h"
 
 // Identidad por-unidad (DEVICE_ID + DEVICE_TOKEN) vive en secrets.h (git-ignored).
 // Falla ruidoso en compilación si falta → nunca se flashea una unidad sin identidad
@@ -276,28 +277,36 @@ static bool postReading() {
   return ok;
 }
 
-// ── Comandos (I3.2): downlink dashboard → device ─────────────────────────────
-// Solo la unidad completa consume comandos (fan/setpoint/reboot). La RTU
-// solo-GPS no tiene actuadores → se excluye para no dejar funciones sin usar.
-#if !GPS_ONLY
-// Aplica un comando al estado local. `reboot` se maneja fuera (ack antes).
+// ── Comandos (I3.2 + OTA): downlink dashboard → device ───────────────────────
+// TODAS las unidades polean comandos (incluidas las RTU solo-GPS): así cualquier
+// unidad puede recibir `ota` (actualización remota) y `reboot`. fan_mode/setpoint
+// solo aplican donde hay fan (unidad completa) → guardados con GPS_ONLY.
+// `ota` y `reboot` reinician → se manejan en pollCommands (ack ANTES).
 static void applyCommand(const char* type, JsonVariantConst payload) {
+#if !GPS_ONLY
   if (strcmp(type, "fan_mode") == 0) {
     const char* m = payload["mode"] | "auto";
     if      (strcmp(m, "on")  == 0) s_fanMode = FAN_ON;
     else if (strcmp(m, "off") == 0) s_fanMode = FAN_OFF;
     else                            s_fanMode = FAN_AUTO;
     Serial.printf("[CMD] fan_mode=%s\n", m);
-  } else if (strcmp(type, "setpoint") == 0 || strcmp(type, "hysteresis") == 0) {
+    return;
+  }
+  if (strcmp(type, "setpoint") == 0 || strcmp(type, "hysteresis") == 0) {
     if (!payload["temp_on"].isNull())  s_tempOn  = payload["temp_on"].as<float>();
     if (!payload["temp_off"].isNull()) s_tempOff = payload["temp_off"].as<float>();
     Serial.printf("[CMD] setpoint on=%.1f off=%.1f\n", s_tempOn, s_tempOff);
     saveControl();   // persiste en NVS → el cambio remoto sobrevive al reboot
-  } else if (strcmp(type, "power_cycle") == 0) {
-    Serial.println("[CMD] power_cycle (sin relé de potencia aún → solo ack)");
-  } else {
-    Serial.printf("[CMD] tipo desconocido: %s\n", type);
+    return;
   }
+#else
+  (void)payload;
+#endif
+  if (strcmp(type, "power_cycle") == 0) {
+    Serial.println("[CMD] power_cycle (sin relé de potencia aún → solo ack)");
+    return;
+  }
+  Serial.printf("[CMD] tipo no aplicable en esta unidad: %s\n", type);
 }
 
 // Marca el comando como confirmado (ack_ts = ahora). true si Supabase lo aceptó.
@@ -356,6 +365,24 @@ static void pollCommands() {
     const char* id   = v["id"];
     const char* type = v["type"];
     if (!id || !type) continue;
+
+    // OTA: descarga+flashea la imagen nueva → reinicia en ella (no retorna si OK).
+    // Se confirma ANTES (el comando SÍ se recibió); si la descarga falla, la unidad
+    // sigue viva en la imagen vieja y el operador lo nota por la fw_version.
+    if (strcmp(type, "ota") == 0) {
+      const char* url = v["payload"]["url"] | "";
+      const char* md5 = v["payload"]["md5"] | "";
+      ackCommand(id);
+      if (strlen(url) > 0) {
+        Serial.printf("[CMD] ota → %s\n", url);
+        otaApplyFromUrl(url, md5);   // éxito = reinicia; si retorna, falló → sigue viejo
+        Serial.println("[CMD] ota falló → sigo en la imagen vieja");
+      } else {
+        Serial.println("[CMD] ota sin url → ignorado");
+      }
+      continue;
+    }
+
     const bool isReboot = (strcmp(type, "reboot") == 0);
     if (!isReboot) applyCommand(type, v["payload"]);
     // ack primero; reboot solo si el ack quedó registrado (evita bucle de reinicio)
@@ -367,8 +394,6 @@ static void pollCommands() {
     }
   }
 }
-
-#endif  // !GPS_ONLY (comandos)
 
 // ── Tarea de red (core 0): provisioning → STA + telemetría ───────────────────
 static void networkTask(void*) {
@@ -418,14 +443,12 @@ static void networkTask(void*) {
       lastPost = now;
       if (postReading()) { s_lastOkMs = millis(); s_everOk = true; }
     }
-#if !GPS_ONLY
+    // Todas las unidades polean: control (fan/setpoint) donde aplique + ota/reboot
+    // en cualquiera. Así toda la flota es actualizable en remoto.
     if (now - lastPoll >= COMMAND_POLL_MS) {
       lastPoll = now;
-      pollCommands();   // downlink de control (aplica + ack)
+      pollCommands();   // downlink: aplica + ack (incl. OTA)
     }
-#else
-    (void)lastPoll;     // RTU solo-GPS: sin actuadores → no hay comandos que consumir
-#endif
     vTaskDelay(pdMS_TO_TICKS(100));
   }
 }

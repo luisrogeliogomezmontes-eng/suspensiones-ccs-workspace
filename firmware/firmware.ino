@@ -105,9 +105,9 @@ void setup() {
   gpsBegin();
   netBegin();                              // WiFi + NTP + tarea de telemetría (core 0)
 #if GPS_ONLY
-  Serial.println(F("\n[BOOT] Suspensiones — RTU GPS (solo ubicación) + telemetría"));
+  Serial.printf("\n[BOOT] Suspensiones — RTU GPS (solo ubicación) + telemetría | fw=%s\n", FW_VERSION);
 #else
-  Serial.println(F("\n[BOOT] Suspensiones P1 — temp + fan PWM + GPS + telemetría"));
+  Serial.printf("\n[BOOT] Suspensiones P1 — temp + fan PWM + GPS + telemetría | fw=%s\n", FW_VERSION);
 #endif
 }
 
