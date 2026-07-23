@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Centinela 1.0 — Producción, costo y trazabilidad</title>
+<style>
+  :root{
+    --bg:#0e1417; --bg2:#121b1f; --panel:#151f24; --panel2:#18242a;
+    --ink:#eef3f1; --ink2:#a3b4b0; --ink3:#647471;
+    --line:rgba(255,255,255,.09); --line2:rgba(255,255,255,.05);
+    --amber:#f2a93b; --amber-d:#b97c1f; --amber-dim:rgba(242,169,59,.16);
+    --ok:#5bb98a; --ok-dim:rgba(91,185,138,.15);
+    --pend:#7f9299; --pend-dim:rgba(127,146,153,.14);
+    --meca:#c9736a; --meca-dim:rgba(201,115,106,.13);
+    --mono:ui-monospace,"SFMono-Regular","JetBrains Mono","Cascadia Code",Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:
+      radial-gradient(1200px 600px at 78% -10%, rgba(242,169,59,.06), transparent 60%),
+      var(--bg);
+    color:var(--ink); font-family:var(--sans); line-height:1.5;
+    letter-spacing:.1px; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px; margin:0 auto; padding:clamp(20px,4vw,52px)}
+  .mono{font-family:var(--mono)}
+  .eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.28em; text-transform:uppercase; color:var(--ink3)}
+  h2{font-family:var(--mono); font-weight:600; letter-spacing:.02em; font-size:clamp(15px,2.2vw,18px); margin:0; color:var(--ink)}
+  section{margin-top:clamp(34px,5vw,58px)}
+  .sec-head{display:flex; align-items:baseline; gap:14px; padding-bottom:14px; margin-bottom:22px; border-bottom:1px solid var(--line)}
+  .sec-head .idx{font-family:var(--mono); font-size:12px; color:var(--amber); letter-spacing:.1em}
+  .sec-head .note{margin-left:auto; font-size:12px; color:var(--ink3)}
+
+  /* ---- ID PLATE / HERO ---- */
+  .plate{
+    position:relative; border:1px solid var(--line); border-radius:14px; overflow:hidden;
+    background:linear-gradient(180deg,var(--panel2),var(--panel));
+    box-shadow:0 1px 0 rgba(255,255,255,.03) inset, 0 30px 60px -40px rgba(0,0,0,.8);
+  }
+  .plate::before{content:""; position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(90deg,transparent 0 6px, var(--line2) 6px 7px, transparent 7px) 0 0/28px 100% ;
+    opacity:.35; mask:linear-gradient(90deg,#000,transparent 42%)}
+  .rivet{position:absolute; width:7px; height:7px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #3a474b, #0c1215); box-shadow:0 0 0 1px rgba(0,0,0,.5)}
+  .rivet.tl{top:12px;left:12px}.rivet.tr{top:12px;right:12px}.rivet.bl{bottom:12px;left:12px}.rivet.br{bottom:12px;right:12px}
+  .plate-inner{padding:clamp(22px,4vw,40px)}
+  .plate-top{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+  .beacon{width:9px; height:9px; border-radius:50%; background:var(--amber); box-shadow:0 0 0 0 rgba(242,169,59,.55); animation:pulse 2.6s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(242,169,59,.5)}70%{box-shadow:0 0 0 10px rgba(242,169,59,0)}100%{box-shadow:0 0 0 0 rgba(242,169,59,0)}}
+  @media (prefers-reduced-motion:reduce){.beacon{animation:none}}
+  .desig{font-family:var(--mono); font-weight:700; font-size:clamp(34px,8vw,68px); line-height:.95; letter-spacing:-.01em; margin:14px 0 0}
+  .desig small{color:var(--amber); font-weight:600}
+  .mission{max-width:56ch; color:var(--ink2); margin:14px 0 0; font-size:clamp(14px,1.7vw,16px)}
+  .tag{display:inline-flex; align-items:center; gap:7px; font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink2); border:1px solid var(--line); border-radius:999px; padding:5px 11px}
+
+  .stats{display:grid; grid-template-columns:repeat(4,1fr); gap:1px; margin-top:28px; background:var(--line); border:1px solid var(--line); border-radius:12px; overflow:hidden}
+  .stat{background:var(--panel); padding:18px 18px 16px}
+  .stat .k{font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink3)}
+  .stat .v{font-family:var(--mono); font-weight:700; font-size:clamp(22px,3.4vw,30px); margin-top:8px; letter-spacing:-.01em}
+  .stat .s{font-size:12px; color:var(--ink2); margin-top:3px}
+  .v.amber{color:var(--amber)} .v.ok{color:var(--ok)}
+  @media(max-width:720px){.stats{grid-template-columns:repeat(2,1fr)}}
+
+  /* ---- TRAVELER / PRODUCTION LINE ---- */
+  .traveler{display:grid; grid-template-columns:repeat(7,1fr); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:12px; overflow:hidden}
+  .stage{background:var(--panel); padding:16px 14px 14px; position:relative; min-width:0}
+  .stage .no{font-family:var(--mono); font-size:11px; color:var(--amber); letter-spacing:.1em}
+  .stage .nm{font-size:13px; margin-top:8px; color:var(--ink); font-weight:600; line-height:1.25}
+  .stage .role{font-family:var(--mono); font-size:10.5px; color:var(--ink3); margin-top:8px; text-transform:uppercase; letter-spacing:.08em}
+  .stage .hh{font-family:var(--mono); font-weight:700; font-size:19px; margin-top:12px}
+  .stage .hh span{font-size:11px; color:var(--ink3); font-weight:400}
+  .stage .bar{height:3px; margin-top:10px; border-radius:2px; background:var(--amber-dim); position:relative}
+  .stage .bar i{position:absolute; left:0; top:0; bottom:0; border-radius:2px; background:var(--amber)}
+  @media(max-width:860px){.traveler{grid-template-columns:repeat(2,1fr)} .stage{border-bottom:1px solid var(--line2)}}
+  .track{display:flex; align-items:center; gap:14px; margin-top:16px; font-family:var(--mono); font-size:12px; color:var(--ink2)}
+  .track .line{flex:1; height:1px; background:linear-gradient(90deg,var(--amber),var(--amber-d))}
+
+  /* ---- BOM TABLE ---- */
+  .grid2{display:grid; grid-template-columns:1.6fr 1fr; gap:22px; align-items:start}
+  @media(max-width:820px){.grid2{grid-template-columns:1fr}}
+  table{width:100%; border-collapse:collapse; font-size:13.5px}
+  .tbl-wrap{border:1px solid var(--line); border-radius:12px; overflow:hidden}
+  th,td{text-align:left; padding:11px 14px; border-bottom:1px solid var(--line2)}
+  th{font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink3); background:var(--panel2)}
+  td .num,.right{font-family:var(--mono); text-align:right; white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+  .comp{color:var(--ink)} .sub{color:var(--ink3); font-size:11.5px; margin-top:2px}
+  .pill{font-family:var(--mono); font-size:10px; letter-spacing:.06em; padding:3px 8px; border-radius:6px; text-transform:uppercase; white-space:nowrap}
+  .pill.ok{color:var(--ok); background:var(--ok-dim)}
+  .pill.luis{color:var(--amber); background:var(--amber-dim)}
+  .pill.pend{color:var(--pend); background:var(--pend-dim)}
+  .pill.meca{color:var(--meca); background:var(--meca-dim)}
+  .cost{font-family:var(--mono); text-align:right; white-space:nowrap; font-weight:600}
+  .cost.q{color:var(--ink3); font-weight:400}
+
+  .summary{border:1px solid var(--line); border-radius:12px; background:linear-gradient(180deg,var(--panel2),var(--panel)); padding:20px; position:sticky; top:20px}
+  .summary .row{display:flex; justify-content:space-between; align-items:baseline; padding:11px 0; border-bottom:1px solid var(--line2); font-size:13.5px}
+  .summary .row:last-of-type{border-bottom:none}
+  .summary .row .lbl{color:var(--ink2)}
+  .summary .row .amt{font-family:var(--mono); font-weight:600}
+  .summary .big{margin-top:6px; padding-top:16px; border-top:1px solid var(--line)}
+  .summary .big .lbl{font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink3)}
+  .summary .big .amt{font-family:var(--mono); font-weight:700; font-size:30px; color:var(--amber); display:block; margin-top:6px}
+  .summary .hint{font-size:11.5px; color:var(--ink3); margin-top:14px; line-height:1.5}
+
+  /* ---- TOOLS ---- */
+  .tools{display:grid; gap:9px}
+  .tool{display:grid; grid-template-columns:190px 1fr 34px; align-items:center; gap:14px}
+  @media(max-width:620px){.tool{grid-template-columns:130px 1fr 30px}}
+  .tool .tn{font-size:13px; color:var(--ink)}
+  .tool .tn em{color:var(--ink3); font-style:normal; font-size:11px}
+  .tool .tb{height:9px; border-radius:5px; background:var(--panel2); overflow:hidden; border:1px solid var(--line2)}
+  .tool .tb i{display:block; height:100%; border-radius:5px; background:linear-gradient(90deg,var(--amber-d),var(--amber))}
+  .tool .tv{font-family:var(--mono); font-weight:700; font-size:14px; text-align:right}
+  .legend{font-size:11.5px; color:var(--ink3); margin-top:16px; font-family:var(--mono); letter-spacing:.02em}
+
+  /* ---- NOTES ---- */
+  .cards{display:grid; grid-template-columns:repeat(3,1fr); gap:16px}
+  @media(max-width:820px){.cards{grid-template-columns:1fr}}
+  .card{border:1px solid var(--line); border-radius:12px; padding:18px; background:var(--panel)}
+  .card h3{margin:0; font-family:var(--mono); font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink2)}
+  .card.meca h3{color:var(--meca)} .card.pend h3{color:var(--pend)} .card.shared h3{color:var(--ok)}
+  .card ul{margin:12px 0 0; padding-left:16px; color:var(--ink2); font-size:13px}
+  .card li{margin:6px 0}
+  footer{margin-top:52px; padding-top:20px; border-top:1px solid var(--line); font-size:12px; color:var(--ink3); display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px}
+  footer .mono{color:var(--ink2)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ===== ID PLATE ===== -->
+  <div class="plate">
+    <span class="rivet tl"></span><span class="rivet tr"></span><span class="rivet bl"></span><span class="rivet br"></span>
+    <div class="plate-inner">
+      <div class="plate-top">
+        <span class="beacon"></span>
+        <span class="eyebrow">Suspensiones Caracas · Depto. Eléctrica/Electrónica</span>
+        <span class="tag" style="margin-left:auto">Unidad de campo · RTU</span>
+      </div>
+      <h1 class="desig">CENTINELA <small>1.0</small></h1>
+      <p class="mission">Datalogger + telemetría (GPS · temperatura · enlace) en maleta de moto, para el equipo de <strong>rescatistas de La Guaira</strong> tras el terremoto del 24-jun. Mide y reporta para proteger la energía y el internet del operativo. Esta es la ficha de <strong>producción, costo y trazabilidad</strong> del MVP que se despacha hoy.</p>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="k">Costo confirmado / unidad</div>
+          <div class="v ok">$15.06</div>
+          <div class="s">+ cable rígido ≈ $21.39 · 5 precios pendientes</div>
+        </div>
+        <div class="stat">
+          <div class="k">Tiempo de fabricación</div>
+          <div class="v amber">3.35 <span style="font-size:14px">h·hombre</span></div>
+          <div class="s">7 fases · por unidad</div>
+        </div>
+        <div class="stat">
+          <div class="k">Meta del lote</div>
+          <div class="v">4 <span style="font-size:14px;color:var(--ink3)">uds</span></div>
+          <div class="s">1 desplegada · 3 por armar</div>
+        </div>
+        <div class="stat">
+          <div class="k">Componentes propios</div>
+          <div class="v">11</div>
+          <div class="s">+ caja 3D y fans = mecánica</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== LÍNEA DE PRODUCCIÓN ===== -->
+  <section>
+    <div class="sec-head">
+      <span class="idx">01</span>
+      <h2>Línea de producción</h2>
+      <span class="note">horas-hombre por fase · acumulado 3.35 h</span>
+    </div>
+    <div class="traveler">
+      <div class="stage"><div class="no">E1</div><div class="nm">Armado de prueba</div><div class="role">Firmware · Eléctrica</div><div class="hh">1.0<span> h</span></div><div class="bar"><i style="width:100%"></i></div></div>
+      <div class="stage"><div class="no">E2</div><div class="nm">Corte de cables</div><div class="role">Ensamblaje</div><div class="hh">0.5<span> h</span></div><div class="bar"><i style="width:50%"></i></div></div>
+      <div class="stage"><div class="no">E3</div><div class="nm">Soldadura interna</div><div class="role">Microsoldadura</div><div class="hh">0.5<span> h</span></div><div class="bar"><i style="width:50%"></i></div></div>
+      <div class="stage"><div class="no">E4</div><div class="nm">Soldadura de salidas</div><div class="role">Microsoldadura</div><div class="hh">0.5<span> h</span></div><div class="bar"><i style="width:50%"></i></div></div>
+      <div class="stage"><div class="no">E5</div><div class="nm">Ensamblaje en caja</div><div class="role">Ensamblaje · Mecánica</div><div class="hh">0.5<span> h</span></div><div class="bar"><i style="width:50%"></i></div></div>
+      <div class="stage"><div class="no">E6</div><div class="nm">Montaje</div><div class="role">Apoyo a construcción</div><div class="hh">0.25<span> h</span></div><div class="bar"><i style="width:25%"></i></div></div>
+      <div class="stage"><div class="no">E7</div><div class="nm">Pruebas finales</div><div class="role">QA</div><div class="hh">0.1<span> h</span></div><div class="bar"><i style="width:10%"></i></div></div>
+    </div>
+    <div class="track"><span>INICIO</span><span class="line"></span><span class="mono" style="color:var(--amber)">3.35 h / unidad → 10.05 h para las 3 restantes</span></div>
+  </section>
+
+  <!-- ===== COSTO / BOM ===== -->
+  <section>
+    <div class="sec-head">
+      <span class="idx">02</span>
+      <h2>Costo de materiales (BOM del MVP)</h2>
+      <span class="note">por unidad · precios en USD</span>
+    </div>
+    <div class="grid2">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Componente</th><th>Cant/ud</th><th class="right">Precio ud</th><th class="right">Costo/ud</th><th>Estado</th></tr></thead>
+          <tbody>
+            <tr><td><div class="comp">DHT22 (sensor de temperatura)</div></td><td class="num">1</td><td class="num">$9.99</td><td class="cost">$9.99</td><td><span class="pill ok">confirmado</span></td></tr>
+            <tr><td><div class="comp">Buck LM2596 12→5 V</div></td><td class="num">1</td><td class="num">$3.00</td><td class="cost">$3.00</td><td><span class="pill ok">confirmado</span></td></tr>
+            <tr><td><div class="comp">Cable 16 AWG (alimentación)</div><div class="sub">70 cm × 2</div></td><td class="num">1.4 m</td><td class="num">$0.85/m</td><td class="cost">$1.19</td><td><span class="pill ok">confirmado</span></td></tr>
+            <tr><td><div class="comp">Conector jack 5.5×2.1 mm</div></td><td class="num">1</td><td class="num">$0.38</td><td class="cost">$0.38</td><td><span class="pill ok">confirmado</span></td></tr>
+            <tr><td><div class="comp">Termoencogible (kit)</div><div class="sub">1 kit rinde 4 centinelas</div></td><td class="num">¼ kit</td><td class="num">$2.00</td><td class="cost">$0.50</td><td><span class="pill ok">confirmado</span></td></tr>
+            <tr><td><div class="comp">Caja de cables rígidos</div><div class="sub">1 caja rinde 3 centinelas</div></td><td class="num">⅓ caja</td><td class="num">~$19</td><td class="cost">~$6.33</td><td><span class="pill luis">dato tuyo</span></td></tr>
+            <tr><td><div class="comp">ESP32</div></td><td class="num">1</td><td class="num">—</td><td class="cost q">?</td><td><span class="pill pend">Freimar</span></td></tr>
+            <tr><td><div class="comp">GPS + antena</div></td><td class="num">1</td><td class="num">—</td><td class="cost q">?</td><td><span class="pill pend">Freimar</span></td></tr>
+            <tr><td><div class="comp">Placa perforada</div></td><td class="num">1</td><td class="num">—</td><td class="cost q">?</td><td><span class="pill pend">Freimar</span></td></tr>
+            <tr><td><div class="comp">Jumpers (pack 40)</div><div class="sub">1 pack rinde 3 centinelas</div></td><td class="num">⅓ pack</td><td class="num">—</td><td class="cost q">?</td><td><span class="pill pend">Freimar</span></td></tr>
+            <tr><td><div class="comp">Cable USB-C ↔ USB-C</div><div class="sub">1 cable rinde 2 centinelas</div></td><td class="num">½</td><td class="num">—</td><td class="cost q">?</td><td><span class="pill pend">Freimar</span></td></tr>
+            <tr><td><div class="comp">Caja 3D + caja del sensor</div><div class="sub">impresión — provista por mecánica</div></td><td class="num">1</td><td class="num">—</td><td class="cost q">—</td><td><span class="pill meca">mecánica</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="summary">
+        <div class="row"><span class="lbl">Materiales confirmados</span><span class="amt" style="color:var(--ok)">$15.06</span></div>
+        <div class="row"><span class="lbl">+ caja cables rígidos</span><span class="amt" style="color:var(--amber)">$6.33</span></div>
+        <div class="row"><span class="lbl">Ítems sin precio</span><span class="amt" style="color:var(--pend)">5</span></div>
+        <div class="big">
+          <span class="lbl">Costo unitario (parcial)</span>
+          <span class="amt">≈ $21.39</span>
+        </div>
+        <p class="hint">Cifra <strong>parcial</strong>: cubre 6 de 11 componentes. Los 5 restantes (ESP32, GPS, placa, jumpers, USB-C) se cierran al cruzar el documento de compras de <strong>Freimar</strong>. La caja 3D y los fans no entran — son gasto de mecánica.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== HERRAMIENTAS ===== -->
+  <section>
+    <div class="sec-head">
+      <span class="idx">03</span>
+      <h2>Herramientas y desgaste</h2>
+      <span class="note">incidencia 1–10 en la producción del Centinela</span>
+    </div>
+    <div class="tools">
+      <div class="tool"><div class="tn">Cautín</div><div class="tb"><i style="width:90%"></i></div><div class="tv">9</div></div>
+      <div class="tool"><div class="tn">Manos / pinzas de ayuda</div><div class="tb"><i style="width:90%"></i></div><div class="tv">9</div></div>
+      <div class="tool"><div class="tn">Pistola de calor</div><div class="tb"><i style="width:90%"></i></div><div class="tv">9</div></div>
+      <div class="tool"><div class="tn">Reposa-cautín</div><div class="tb"><i style="width:90%"></i></div><div class="tv">9</div></div>
+      <div class="tool"><div class="tn">Pela-cables</div><div class="tb"><i style="width:80%"></i></div><div class="tv">8</div></div>
+      <div class="tool"><div class="tn">PC (código)</div><div class="tb"><i style="width:80%"></i></div><div class="tv">8</div></div>
+      <div class="tool"><div class="tn">Piquetas</div><div class="tb"><i style="width:70%"></i></div><div class="tv">7</div></div>
+      <div class="tool"><div class="tn">Tijeras</div><div class="tb"><i style="width:60%"></i></div><div class="tv">6</div></div>
+      <div class="tool"><div class="tn">Dremel <em>· prestado por mecánica</em></div><div class="tb"><i style="width:60%"></i></div><div class="tv">6</div></div>
+      <div class="tool"><div class="tn">Cinta métrica</div><div class="tb"><i style="width:50%"></i></div><div class="tv">5</div></div>
+      <div class="tool"><div class="tn">Lupa</div><div class="tb"><i style="width:40%"></i></div><div class="tv">4</div></div>
+      <div class="tool"><div class="tn">Fuente de poder <em>· más en diseño/pruebas</em></div><div class="tb"><i style="width:40%"></i></div><div class="tv">4</div></div>
+      <div class="tool"><div class="tn">Pistola de silicona</div><div class="tb"><i style="width:30%"></i></div><div class="tv">3</div></div>
+      <div class="tool"><div class="tn">Mini destornilladores</div><div class="tb"><i style="width:30%"></i></div><div class="tv">3</div></div>
+      <div class="tool"><div class="tn">Vernier</div><div class="tb"><i style="width:30%"></i></div><div class="tv">3</div></div>
+    </div>
+    <p class="legend">10 = crítica (sin ella la producción se detiene) · 7–9 = muy usada · 4–6 = útil, reemplazable · 1–3 = de apoyo / etapas puntuales.</p>
+  </section>
+
+  <!-- ===== TRAZABILIDAD ===== -->
+  <section>
+    <div class="sec-head">
+      <span class="idx">04</span>
+      <h2>Trazabilidad</h2>
+      <span class="note">de dónde sale cada cosa</span>
+    </div>
+    <div class="cards">
+      <div class="card shared">
+        <h3>Rinde varias unidades</h3>
+        <ul>
+          <li>Caja de cables rígidos → <strong>3</strong> centinelas</li>
+          <li>Pack de 40 jumpers → <strong>3</strong> centinelas</li>
+          <li>Kit de termoencogible → <strong>4</strong> centinelas</li>
+          <li>Cable USB-C ↔ USB-C → <strong>2</strong> centinelas</li>
+        </ul>
+      </div>
+      <div class="card meca">
+        <h3>Gasto de mecánica</h3>
+        <ul>
+          <li>Caja con tapa (impresión 3D)</li>
+          <li>Caja independiente del sensor</li>
+          <li>Fans definitivos (los tiene mecánica)</li>
+          <li class="mono" style="color:var(--ink3);font-size:12px">No entran al costo del depto</li>
+        </ul>
+      </div>
+      <div class="card pend">
+        <h3>Pendiente Freimar</h3>
+        <ul>
+          <li>Precio de ESP32, GPS, placa perforada</li>
+          <li>Precio del pack de jumpers y del USB-C</li>
+          <li>Cruce con el documento de compras</li>
+          <li class="mono" style="color:var(--ink3);font-size:12px">Cierra el costo unitario real</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Centinela 1.0 · MVP en despacho — ficha de producción</span>
+    <span class="mono">Generado 2026-07-23 · datos: inventario + compras confirmadas · costo parcial (faltan 5 precios)</span>
+  </footer>
+
+</div>
+</body>
+</html>

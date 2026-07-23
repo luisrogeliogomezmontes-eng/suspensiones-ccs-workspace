@@ -6,6 +6,48 @@
 
 ---
 
+## 2026-07-23 — Repo personal de sync entre Macs (historia limpia, sin token) + handoff
+
+**Objetivo:** Luis quiere avanzar el proyecto en **dos Macs a la vez** (casa + trabajo), usando en la del trabajo la **cuenta de Claude del trabajo** para no gastar tokens personales. Pidió un repo/rama privado suyo para hostear todo el workspace e ir sincronizando, y un **documento único** para entregarle al Claude de la otra Mac y que ese se encargue del setup.
+
+**Hecho:**
+- **Diagnóstico de seguridad previo:** confirmé que `.env.supabase` (con `SUPABASE_ACCESS_TOKEN=sbp_...`) estaba **TRACKED** y en la historia (commit `279762f`). Escaneo de los 150 archivos a commitear: **cero valores de secreto reales** (solo la palabra `service_role`/`sbp_35…` truncado en docs).
+- **Repo nuevo privado `suspensiones-ccs-workspace`** (cuenta `luisrogeliogomezmontes-eng`), elegido con Luis (repo nuevo, no rama ni el de colegas). Mecánica: `git rm --cached .env.supabase` → rama huérfana + **1 commit limpio** (`304c1f7`, 150 archivos = todo el working tree, sin el token) → `git remote rename origin colegas` → `gh repo create ... --private` → push **solo de `main`** (el `backup-full-history` con el token NO subió).
+- **Estado final de remotes** (esta working copy): `origin` = repo nuevo (sync), `colegas` = `suspensiones-esp32-telemetria` (original, intacto). Rama local `backup-full-history` = respaldo de la historia vieja.
+- **Handoff:** [`EMPEZAR-MAC-TRABAJO.md`](../EMPEZAR-MAC-TRABAJO.md) — documento breve para el Claude de la otra Mac: datos del repo, identidad git (`rogelio2904` / `luisrogeliogomezmontes@gmail.com`), clonar, recrear secretos desde los `*.example`, leer CLAUDE/MEMORY/BITACORA, y el flujo `pull`/`push`.
+- **Memoria:** `memory/sync-repo-topology.md` (referencia durable de los dos remotes). MEMORY.md → header + **D36** + To-Do §6.
+
+**Pendiente / próximo:**
+- **En la Mac del trabajo:** clonar + recrear secretos + empezar a trabajar (lo hace el otro Claude con el handoff).
+- 🔴 **Rotar el token `sbp_`** — sigue leakeado en la historia de `colegas` en GitHub; destrackearlo no lo des-leakea.
+- Cuando la otra Mac clone OK: borrar `backup-full-history` local.
+- Si a futuro se quiere reconciliar `colegas` ↔ `origin` (historias distintas): es manual.
+
+**Decisiones:** **D36** (repo personal de sync entre Macs, historia limpia sin el token).
+
+---
+
+## 2026-07-22 (cierre — despliegue firmware Centinela 02) — 2ª unidad completa operativa; GPS resuelto; DHT22 dañado
+
+**Objetivo:** subir y desplegar el firmware al **Centinela 02** (2ª unidad, equipo completo: GPS + temp + fan), dejarla posteando y 100% operativa. Trabajo de **producción/despliegue**, no de I+D.
+
+**Hecho:**
+- **Backend (identidad propia):** creé en Supabase la fila `devices` **"Centinela 02"** (`device_id …0002`) + su **`device_token`** en `device_tokens` (vía REST + `service_role`). Verifiqué que solo existía Centinela 01 → cero colisión de datos (cada unidad su UUID + token, modelo D27).
+- **Firmware:** `config.h` `DEVICE_ID` → `…0002`; `secrets.h` `DEVICE_TOKEN` → el nuevo. Compilado **`GPS_ONLY=0`** (unidad completa), flasheado a 115200 (el auto-reset del CH340 exige `UploadSpeed=115200`; 921600 falla).
+- **Validado end-to-end:** WiFi (`Rescate`, −40 dBm), NTP ok, **telemetría → Supabase** (105+ filas, `last_seen` al día), **fan proporcional** (36 % @ 27 °C — lazo temp→fan cerrando en HW).
+- **GPS (resuelto):** al inicio `link=--` (cero bytes) → **cable + sensor GPS malos**; Luis los **cambió**. Luego `link=ok` pero `sat=0`. Escribí **`tests/gps_probe/`** (vuelca UART2 crudo a 9600 y 115200). Diagnóstico definitivo: **115200 es el baud correcto** (120 sentencias NMEA válidas vs 0 a 9600), `ANTENNA OK`, módulo sano → solo faltaba cielo. Con vista despejada **enganchó `fix=OK sat=7 pos=10.4582,−66.8429`** (Caracas). Reflasheado a 115200 producción.
+- **Fan "no controla, va a full" (resuelto):** por serial → `temp=nanC fan=70%`. El firmware entra en **fail-safe `FAN_SAFE_DUTY`** (capado a 70 %) cuando pierde el sensor → por eso soplarle aire frío no bajaba nada. Causa raíz: **DHT22 DAÑADO** (confirmado por Luis). **No era GND ni PWM.**
+
+**Pendiente / próximo:**
+- **Reemplazar el DHT22 dañado** del Centinela 02 → recién ahí `temp` real y fan proporcional.
+- **Energía definitiva** (jack 12 V EcoFlow → **LM2596 ajustado a 5.0 V** → VIN; fan +12 V/GND directo al riel) y **montaje anti-vibración** (soldar, no jumpers) para soltar a la calle.
+- ⚠️ **Gestión de config por unidad:** `config.h` ahora hornea `DEVICE_ID=…0002` → reflashear Centinela 01 desde este repo le pondría el ID equivocado. La **línea de producción** debe resolver esto (perfil/ID por unidad).
+- 🏭 **NUEVO — diseñar la LÍNEA DE PRODUCCIÓN por fases** (task para próxima sesión; fases y h/hombre en MEMORY §6). Solo producción, no I+D.
+
+**Decisiones:** ninguna nueva formal (fue ejecución + diagnóstico). El despliegue sigue el modelo de token por unidad (D27); el hallazgo de config por-unidad alimenta el diseño de la línea de producción.
+
+---
+
 ## 2026-07-22 — Dashboard multi-centinela: selector en header + vista de flota + hallazgo de token en git
 
 **Objetivo:** Luis reportó que "no se visualiza nada" en el dashboard pese a tener un **Centinela 02 encendido y posteando** a Supabase, y preguntó si la interfaz permite cambiar entre centinelas.

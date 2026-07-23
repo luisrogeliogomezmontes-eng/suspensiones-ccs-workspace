@@ -11,6 +11,7 @@ firmware completo (`firmware/`). Cada prueba valida **una cosa** con lo mínimo 
 | Prueba | Qué valida | Estado | Guía |
 |---|---|---|---|
 | [fan_pwm_web](fan_pwm_web/) | Control de velocidad de los fans 4-hilos PWM (D26) con interfaz web (AP `FanTest` → slider) | ✅ validada 2026-07-19 | [GUIA.md](fan_pwm_web/GUIA.md) |
+| [gps_probe](gps_probe/) | Baud y salud del GPS: vuelca UART2 crudo a 9600/115200 y muestra si hay NMEA válido | ✅ usada 2026-07-22 (Centinela 02) | [GUIA.md](gps_probe/GUIA.md) |
 
 ## Convención para agregar una prueba
 

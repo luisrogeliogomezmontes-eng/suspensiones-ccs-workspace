@@ -68,8 +68,11 @@ constexpr uint32_t TELEMETRY_PERIOD_MS = 5000;   // 1 fila cada 5 s (ajustar por
 constexpr uint32_t COMMAND_POLL_MS     = 5000;   // I3.2: revisa comandos pendientes cada 5 s
 constexpr uint32_t HTTP_TIMEOUT_MS     = 8000;   // corta si el POST cuelga
 
-// device_id de esta unidad (fila en la tabla `devices`) = RTU #2 (Centinela 02). NO es secreto.
-constexpr const char* DEVICE_ID = "00000000-0000-0000-0000-000000000002";
+// device_id de esta unidad → vive en secrets.h (git-ignored, POR-UNIDAD) junto al
+// DEVICE_TOKEN: son un PAR (el token corresponde a este device_id en device_tokens).
+// NO se hornea aquí a propósito → reflashear otra unidad desde el repo NO le pone el
+// ID de otra (evita colisión de datos entre Centinelas). Ver secrets.h.example.
+// NO es secreto, pero sí per-unidad. La compilación falla ruidoso si falta (net.cpp).
 
 // ---- WiFi (reconexión no bloqueante con backoff) ----
 constexpr uint32_t WIFI_RETRY_MIN_MS = 2000;

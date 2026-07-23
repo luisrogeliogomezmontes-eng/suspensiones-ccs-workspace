@@ -13,6 +13,16 @@
 #include "secrets.h"
 #include "gps.h"
 
+// Identidad por-unidad (DEVICE_ID + DEVICE_TOKEN) vive en secrets.h (git-ignored).
+// Falla ruidoso en compilación si falta → nunca se flashea una unidad sin identidad
+// (o con la de otra horneada en config.h). Ver secrets.h.example.
+#ifndef DEVICE_ID
+#error "Falta #define DEVICE_ID en secrets.h — copialo de secrets.h.example (identidad por-unidad)"
+#endif
+#ifndef DEVICE_TOKEN
+#error "Falta #define DEVICE_TOKEN en secrets.h — copialo de secrets.h.example"
+#endif
+
 // ── Credenciales WiFi (guardadas en NVS por el portal) ───────────────────────
 static char s_ssid[33] = {0};
 static char s_pass[65] = {0};
