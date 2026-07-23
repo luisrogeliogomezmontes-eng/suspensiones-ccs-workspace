@@ -23,6 +23,7 @@ export type Comanda = {
   titulo: string;
   solicitante: string;
   fechaPedido: string | null; // ISO
+  deadline: string | null; // ISO — fecha de entrega requerida
   estado: EstadoComanda;
   notas: string;
   etapas: Etapa[];

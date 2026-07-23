@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import type { BoardState, Comanda, Etapa } from "@/lib/types";
 import { totals, realH, excedidoH, semaforo } from "@/lib/derive";
-import { hm, hDec, fechaHora, relTime } from "@/lib/format";
+import { hm, hDec, fechaHora, relTime, deadlineInfo } from "@/lib/format";
 import { TOTAL_EST } from "@/lib/fases";
 import { Ring } from "./Ring";
 import { toneColor, comandaEstadoColor } from "./tone";
@@ -157,6 +157,14 @@ export function ComandaDetail({ initial }: { initial: Comanda }) {
           <p className="mt-1 text-xs" style={{ color: "var(--ink-faint)" }}>
             {c.solicitante ? `solicitó ${c.solicitante} · ` : ""}pedido {fechaHora(c.fechaPedido)} ({relTime(c.fechaPedido, now)})
           </p>
+          {(() => {
+            const di = deadlineInfo(c.deadline, c.estado === "Hecha" || c.estado === "Cancelada", now);
+            return di ? (
+              <p className="num mt-1 text-sm font-semibold" style={{ color: di.color }}>
+                ⏱ {di.texto}
+              </p>
+            ) : null;
+          })()}
         </div>
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>

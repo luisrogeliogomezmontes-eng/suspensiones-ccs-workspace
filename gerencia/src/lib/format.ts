@@ -39,3 +39,25 @@ export function fechaHora(iso: string | null): string {
   if (!iso) return "—";
   return FECHA.format(new Date(iso));
 }
+
+const FECHA_CORTA = new Intl.DateTimeFormat("es-VE", { day: "2-digit", month: "short" });
+export function fechaCorta(iso: string | null): string {
+  if (!iso) return "—";
+  return FECHA_CORTA.format(new Date(iso));
+}
+
+/** Estado del deadline (color + texto) según si la comanda está terminada. */
+export function deadlineInfo(
+  iso: string | null,
+  done: boolean,
+  nowMs: number,
+): { texto: string; color: string } | null {
+  if (!iso) return null;
+  const fecha = fechaCorta(iso);
+  if (done) return { texto: `entrega ${fecha}`, color: "var(--ink-faint)" };
+  const dias = Math.ceil((Date.parse(iso) - nowMs) / 86400000);
+  if (dias < 0) return { texto: `vencida · ${fecha}`, color: "var(--crit)" };
+  if (dias === 0) return { texto: `entrega HOY · ${fecha}`, color: "var(--crit)" };
+  if (dias <= 2) return { texto: `entrega en ${dias}d · ${fecha}`, color: "var(--warn)" };
+  return { texto: `entrega ${fecha} · en ${dias}d`, color: "var(--ink-dim)" };
+}

@@ -11,8 +11,8 @@ type Row = BomRow & {
   status: "falta" | "justo" | "ok";
 };
 
-function rowInfo(r: BomRow, activas: number): Row {
-  const reservado = r.cantUd * activas;
+function rowInfo(r: BomRow, unidades: number): Row {
+  const reservado = r.cantUd * unidades;
   const libre = r.comprado - reservado;
   const falta1 = r.comprado < r.cantUd;
   const faltaComprar = Math.max(reservado - r.comprado, 0);
@@ -50,19 +50,22 @@ export function MaterialesView({ initial }: { initial: BoardState }) {
     };
   }, []);
 
-  const activas = state.comandas.filter((c) => c.estado !== "Cancelada").length;
+  // Solo las comandas que TODAVÍA consumen material (las Hechas ya se fabricaron).
+  const porConstruir = state.comandas.filter(
+    (c) => c.estado === "Pendiente" || c.estado === "En curso" || c.estado === "En pausa",
+  ).length;
 
   const rowsByFase = useMemo(() => {
     const map = new Map<string, Row[]>();
     for (const f of FASES) {
       const rows = state.bom
         .filter((b) => b.fases.includes(f.key))
-        .map((b) => rowInfo(b, activas))
+        .map((b) => rowInfo(b, porConstruir))
         .sort((a, b) => a.item.localeCompare(b.item));
       map.set(f.key, rows);
     }
     return map;
-  }, [state.bom, activas]);
+  }, [state.bom, porConstruir]);
 
   // Compras: componentes únicos que faltan para cubrir las comandas activas.
   const compras = useMemo(() => {
@@ -90,13 +93,13 @@ export function MaterialesView({ initial }: { initial: BoardState }) {
             Materiales por etapa
           </h1>
           <p className="mt-0.5 text-xs" style={{ color: "var(--ink-faint)" }}>
-            qué usa cada fase · qué bloquea · qué pasar a compras · descontando {activas} comandas activas
+            qué usa cada fase · qué bloquea · qué pasar a compras · para {porConstruir} comanda{porConstruir === 1 ? "" : "s"} por construir
           </p>
         </div>
         <div className="flex gap-2">
           <div className="card px-4 py-2.5">
-            <div className="num text-xl font-bold" style={{ color: "var(--ink)" }}>{activas}</div>
-            <div className="eyebrow mt-0.5">Comandas activas</div>
+            <div className="num text-xl font-bold" style={{ color: "var(--ink)" }}>{porConstruir}</div>
+            <div className="eyebrow mt-0.5">Por construir</div>
           </div>
           <div className="card px-4 py-2.5">
             <div className="num text-xl font-bold" style={{ color: fasesBloqueadas > 0 ? "var(--crit)" : "var(--ok)" }}>{fasesBloqueadas}</div>
@@ -125,7 +128,7 @@ export function MaterialesView({ initial }: { initial: BoardState }) {
                   </div>
                 </div>
                 <div className="num whitespace-nowrap text-right text-sm font-bold" style={{ color: "var(--crit)" }}>
-                  faltan {fmt(Math.ceil(r.faltaComprar))}
+                  faltan {fmt(r.faltaComprar)}
                   <div className="text-[0.65rem] font-medium" style={{ color: "var(--ink-faint)" }}>
                     tiene {fmt(r.comprado)} / usa {fmt(r.cantUd)}·ud
                   </div>
@@ -185,7 +188,7 @@ export function MaterialesView({ initial }: { initial: BoardState }) {
       </div>
 
       <p className="mt-4 text-xs" style={{ color: "var(--ink-faint)" }}>
-        🔴 no alcanza ni para 1 unidad · 🟡 alcanza para algunas pero no para las {activas} comandas · 🟢 cubierto.
+        🔴 no alcanza ni para 1 unidad · 🟡 alcanza para algunas pero no para las {porConstruir} por construir · 🟢 cubierto.
         “Externos” (cajas 3D, fans, PC) los provee mecánica/software — no salen del BOM.
       </p>
     </div>

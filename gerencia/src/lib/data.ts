@@ -53,6 +53,7 @@ function parseComanda(pg: NotionPage): Comanda {
     titulo: pTitle(props["Comanda"]),
     solicitante: pText(props["Solicitante"]),
     fechaPedido: pDateStart(props["Fecha pedido"]),
+    deadline: pDateStart(props["Fecha límite"]),
     estado: (pSelect(props["Estado"]) || "Pendiente") as EstadoComanda,
     notas: pText(props["Notas"]),
     etapas: [],

@@ -7,13 +7,13 @@ export const dynamic = "force-dynamic";
 const A2_PROJECT_ID = "3a470cf6-0ef1-81bf-a119-f6bceee868d5";
 
 export async function POST(req: Request) {
-  let body: { unidad?: string; solicitante?: string; pin?: string };
+  let body: { unidad?: string; solicitante?: string; deadline?: string | null; pin?: string };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
   }
-  const { unidad, solicitante, pin } = body;
+  const { unidad, solicitante, deadline, pin } = body;
 
   if (!process.env.WRITE_PIN || pin !== process.env.WRITE_PIN) {
     return NextResponse.json({ error: "PIN incorrecto" }, { status: 403 });
@@ -29,13 +29,15 @@ export async function POST(req: Request) {
 
   const now = new Date().toISOString();
   try {
-    const comandaId = await createPage(dsComandas, {
+    const comandaProps: Record<string, unknown> = {
       Comanda: { title: [{ text: { content: unidad.trim() } }] },
       Proyecto: { relation: [{ id: A2_PROJECT_ID }] },
       "Fecha pedido": { date: { start: now } },
       Solicitante: { rich_text: [{ text: { content: (solicitante ?? "").trim() } }] },
       Estado: { select: { name: "Pendiente" } },
-    });
+    };
+    if (deadline) comandaProps["Fecha límite"] = { date: { start: deadline } };
+    const comandaId = await createPage(dsComandas, comandaProps);
 
     // Genera las 7 etapas (secuencial, para no chocar con el rate-limit de Notion).
     for (const f of FASES) {

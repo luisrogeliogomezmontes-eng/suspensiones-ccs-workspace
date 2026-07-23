@@ -7,22 +7,23 @@ import { ensurePin } from "./actions";
 export function NewComanda({
   suggested,
   bom,
-  activas,
+  porConstruir,
 }: {
   suggested: string;
   bom: BomRow[];
-  activas: number;
+  porConstruir: number;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [unidad, setUnidad] = useState(suggested);
   const [solicitante, setSolicitante] = useState("Producción");
+  const [deadline, setDeadline] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  // Preview: con esta unidad extra, ¿qué material faltaría?
+  // Con esta unidad extra, ¿qué material faltaría? (cuenta las que faltan por construir + la nueva)
   const faltantes = useMemo(() => {
-    const need = activas + 1;
+    const need = porConstruir + 1;
     return bom
       .filter((b) => b.cantUd > 0 && b.comprado < b.cantUd * need)
       .map((b) => ({
@@ -30,7 +31,7 @@ export function NewComanda({
         falta: Math.max(b.cantUd * need - b.comprado, 0),
       }))
       .sort((a, b) => b.falta - a.falta);
-  }, [bom, activas]);
+  }, [bom, porConstruir]);
 
   async function crear() {
     setBusy(true);
@@ -45,7 +46,7 @@ export function NewComanda({
       const r = await fetch("/api/comanda", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ unidad, solicitante, pin }),
+        body: JSON.stringify({ unidad, solicitante, deadline: deadline || null, pin }),
       });
       const j = (await r.json().catch(() => ({}))) as { id?: string; error?: string };
       if (!r.ok || !j.id) {
@@ -68,27 +69,29 @@ export function NewComanda({
     );
   }
 
+  const inputStyle = {
+    background: "var(--panel-2)",
+    border: "1px solid var(--border-2)",
+    color: "var(--ink)",
+  } as const;
+
   return (
     <div className="card p-4" style={{ minWidth: 300 }}>
       <p className="eyebrow">Nueva comanda (1 unidad)</p>
       <label className="mt-2 block text-xs" style={{ color: "var(--ink-dim)" }}>
         Unidad
-        <input
-          className="mt-1 w-full rounded-lg px-2.5 py-1.5 text-sm"
-          style={{ background: "var(--panel-2)", border: "1px solid var(--border-2)", color: "var(--ink)" }}
-          value={unidad}
-          onChange={(e) => setUnidad(e.target.value)}
-        />
+        <input className="mt-1 w-full rounded-lg px-2.5 py-1.5 text-sm" style={inputStyle} value={unidad} onChange={(e) => setUnidad(e.target.value)} />
       </label>
-      <label className="mt-2 block text-xs" style={{ color: "var(--ink-dim)" }}>
-        Solicitante
-        <input
-          className="mt-1 w-full rounded-lg px-2.5 py-1.5 text-sm"
-          style={{ background: "var(--panel-2)", border: "1px solid var(--border-2)", color: "var(--ink)" }}
-          value={solicitante}
-          onChange={(e) => setSolicitante(e.target.value)}
-        />
-      </label>
+      <div className="mt-2 flex gap-2">
+        <label className="block flex-1 text-xs" style={{ color: "var(--ink-dim)" }}>
+          Solicitante
+          <input className="mt-1 w-full rounded-lg px-2.5 py-1.5 text-sm" style={inputStyle} value={solicitante} onChange={(e) => setSolicitante(e.target.value)} />
+        </label>
+        <label className="block text-xs" style={{ color: "var(--ink-dim)" }}>
+          Entrega (deadline)
+          <input type="date" className="mt-1 w-full rounded-lg px-2.5 py-1.5 text-sm" style={inputStyle} value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+        </label>
+      </div>
 
       <div className="mt-2.5 rounded-lg px-2.5 py-2 text-xs" style={{ background: "var(--panel-2)" }}>
         {faltantes.length === 0 ? (
@@ -99,7 +102,7 @@ export function NewComanda({
             <div className="num mt-1" style={{ color: "var(--ink-dim)" }}>
               {faltantes.slice(0, 4).map((f) => (
                 <div key={f.item}>
-                  {f.item} — faltan {Math.ceil(f.falta)}
+                  {f.item} — faltan {Number.isInteger(f.falta) ? f.falta : f.falta.toFixed(2).replace(/\.?0+$/, "")}
                 </div>
               ))}
               {faltantes.length > 4 && <div>+{faltantes.length - 4} más…</div>}

@@ -119,7 +119,7 @@ chequeo **"¿alcanza para esta comanda?"** por componente ya se puede calcular e
 |---|---|---|
 | **1** | Modelo Notion: `Comandas` + `Fabricación·Etapas` + fórmulas de tiempo/exceso + `% avance` + `Alcance` inventario + comanda demo. | ✅ **HECHA** (2026-07-23) |
 | **2** | App Next en Vercel (`gerencia/`): board de comandas (% avance, cronómetros en vivo, semáforo), detalle, inventario. **Pública** en gerencia-xi.vercel.app. | ✅ **HECHA** (2026-07-23) |
-| **3** | Escritura: Empezar/Terminar/Reabrir/Bloquear etapa → Notion (**PIN**, `WRITE_PIN`) · **crear comanda** (genera 7 etapas) · vista **Materiales por etapa** (BOM multi-select `Fases` → qué bloquea cada fase → compras) · **descuento** por comanda (computado: `comprado − usa/ud × comandas activas`). | ✅ **HECHA** (2026-07-23) |
+| **3** | Escritura: Empezar/Terminar/Reabrir/Bloquear etapa → Notion (**PIN**, `WRITE_PIN`) · **crear comanda** (genera 7 etapas, con **deadline** opcional `Fecha límite`) · vista **Materiales por etapa** (BOM multi-select `Fases` → qué bloquea cada fase → compras) · **descuento** por comanda computado **solo sobre las "por construir"** (Pendiente/En curso/En pausa; las Hechas ya se fabricaron) = `comprado − usa/ud × porConstruir`. | ✅ **HECHA** (2026-07-23) |
 | **4** | Analítica de tiempos (heatmap rendimiento por fase) → afinar estimados. | ⬜ |
 | **5** | Visual del Centinela: foto anotada → exploded view 3D (Three.js / model-viewer con `.glb` de la caja). | ⬜ (diferido) |
 
@@ -140,3 +140,21 @@ chequeo **"¿alcanza para esta comanda?"** por componente ya se puede calcular e
 | Proceso de fabricación (E1–E8, preexistente) | `90613a88-fd92-4441-b6fe-5ae5d87d6d04` |
 | Comanda demo (CMD-1) | `3a670cf60ef1816f9d3ccc624b17bfcb` |
 | Página gerencia (parent) | `3a470cf60ef18115a24ad4fbed47749b` |
+
+Nuevas propiedades en Notion (2026-07-23): `BOM/Consumo.Fases` (multi-select, materiales↔etapa) ·
+`Comandas.Fecha límite` (date, deadline de entrega).
+
+## 9. Pendientes (próxima sesión)
+- **Fase 4 — Analítica de tiempos**: heatmap de rendimiento por etapa (real vs estimado, % excedidas) para
+  **afinar los estimados** con datos reales. Requiere acumular tiempos vía Empezar/Terminar (arranca ahora).
+- **Fase 5 — Visual del Centinela**: foto anotada de componentes → **exploded view 3D** (Three.js /
+  `<model-viewer>` con un `.glb`). Ambicioso, diferido por Luis.
+- **Deadlines reales**: la columna `Fecha límite` ya existe; ponerle deadline a las comandas activas
+  (#04 aún sin deadline). Se setean desde el form "Nueva comanda" o directo en Notion.
+- **Cambiar `WRITE_PIN`**: hoy es `1234` (env var en Vercel). Poner uno privado.
+- **Opcional**: auto-deploy por git (conectar el repo en Vercel con Root Directory = `gerencia`) en vez de
+  desplegar por CLI · dominio propio corto en vez de `gerencia-xi.vercel.app` · revocar el Vercel token si no
+  se va a redeployar pronto.
+- **Ojo (dato)**: el inventario lo edita Luis y no siempre está reconciliado — el "comprado" se interpreta
+  como **stock actual**. Si a futuro se quiere separar "comprado histórico" de "stock", habría que modelar el
+  consumo real (hoy el descuento es computado en la app desde el conteo de comandas por construir).

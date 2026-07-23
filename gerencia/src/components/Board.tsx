@@ -78,7 +78,7 @@ export function Board({ initial }: { initial: BoardState }) {
         <NewComanda
           suggested={`Centinela A2 · Unidad #${String(state.comandas.length + 1).padStart(2, "0")}`}
           bom={state.bom}
-          activas={comandas.length}
+          porConstruir={comandas.filter((c) => c.estado === "Pendiente" || c.estado === "En curso" || c.estado === "En pausa").length}
         />
       </div>
 

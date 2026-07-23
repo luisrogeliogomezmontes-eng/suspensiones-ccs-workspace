@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Comanda } from "@/lib/types";
 import { totals, realH, semaforo } from "@/lib/derive";
-import { hm, hDec, relTime } from "@/lib/format";
+import { hm, hDec, relTime, deadlineInfo } from "@/lib/format";
 import { TOTAL_EST } from "@/lib/fases";
 import { Ring } from "./Ring";
 import { StageStrip } from "./StageStrip";
@@ -10,6 +10,7 @@ import { toneColor, comandaEstadoColor } from "./tone";
 export function ComandaCard({ c, nowMs }: { c: Comanda; nowMs: number }) {
   const t = totals(c, nowMs);
   const sinCron = t.realTotal < 0.01 && c.etapas.every((e) => !e.inicio);
+  const di = deadlineInfo(c.deadline, c.estado === "Hecha" || c.estado === "Cancelada", nowMs);
   const current = t.current;
   const sem = current ? semaforo(current, nowMs) : null;
   const currentReal = current ? realH(current, nowMs) : 0;
@@ -55,6 +56,11 @@ export function ComandaCard({ c, nowMs }: { c: Comanda; nowMs: number }) {
         {c.solicitante && (
           <p className="mt-0.5 text-xs" style={{ color: "var(--ink-dim)" }}>
             solicitó {c.solicitante}
+          </p>
+        )}
+        {di && (
+          <p className="num mt-1 text-xs font-semibold" style={{ color: di.color }}>
+            ⏱ {di.texto}
           </p>
         )}
       </div>
