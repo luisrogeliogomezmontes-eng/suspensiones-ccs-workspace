@@ -22,6 +22,11 @@ export interface Reading {
   fan_duty: number | null;
   fan_rpm?: number | null;
 
+  // Estado de control (read-back del device; null en firmware viejo → 0010)
+  fan_mode?: "auto" | "on" | "off" | null; // modo efectivo del fan
+  temp_on?: number | null;                 // setpoint efectivo: enciende a (°C)
+  temp_off?: number | null;                // setpoint efectivo: apaga a (°C)
+
   // GPS
   lat: number | null;
   lng: number | null;

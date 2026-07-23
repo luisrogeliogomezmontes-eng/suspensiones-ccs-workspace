@@ -64,11 +64,14 @@ static void report();
 static void taskSample()  { g_temp_c = readTemperatureC(); }
 static void taskControl() {
   applyFanControl(g_temp_c);
-  // Alimenta la tarea de telemetría. Reporta temp/fan solo si hay sensor real y
-  // la lectura es válida (si el DHT22 no responde → NaN → envía null, no basura).
+  // Alimenta la tarea de telemetría. La TEMP se reporta solo si hay sensor real y
+  // la lectura es válida (DHT22 caído → NaN → envía null, no basura). El FAN, en
+  // cambio, SIEMPRE se reporta en la unidad completa: aunque el sensor esté muerto
+  // el fan gira en fail-safe (FAN_SAFE_DUTY) → mostrar ese duty es diagnóstico útil
+  // (se ve "temp=null, fan=70%" = sensor caído, no fan apagado).
   const bool tvalid = (HAS_TEMP_SENSOR != 0) && !isnan(g_temp_c);
   const bool fan_on = g_fan_duty > 0;
-  netSetSnapshot(tvalid, g_temp_c, tvalid, fan_on, g_fan_duty);
+  netSetSnapshot(tvalid, g_temp_c, /*hasFan=*/true, fan_on, g_fan_duty);
 }
 #endif
 static void taskReport()  { report(); }

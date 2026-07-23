@@ -229,6 +229,14 @@ static bool postReading() {
   doc["ts"]        = ts;
   if (snap.hasTemp) doc["temp_c"] = snap.temp_c;
   if (snap.hasFan) { doc["fan_on"] = snap.fan_on; doc["fan_duty"] = snap.fan_duty; }
+#if !GPS_ONLY
+  // Read-back del estado de control (para /control): umbrales efectivos (NVS) +
+  // modo del fan. El dashboard deja de editar a ciegas. GPS_ONLY no tiene fan.
+  doc["temp_on"]  = netTempOn();
+  doc["temp_off"] = netTempOff();
+  const int fm = netFanMode();
+  doc["fan_mode"] = (fm == FAN_ON) ? "on" : (fm == FAN_OFF) ? "off" : "auto";
+#endif
   if (fix.valid) {
     doc["lat"]        = fix.lat;
     doc["lng"]        = fix.lng;
@@ -242,7 +250,7 @@ static bool postReading() {
   doc["uptime_s"]  = (uint32_t)(millis() / 1000);
   doc["heap_free"] = (uint32_t)ESP.getFreeHeap();
 
-  char body[512];
+  char body[640];   // margen para los campos de control (temp_on/off/fan_mode) + GPS completo
   size_t len = serializeJson(doc, body, sizeof(body));
 
   char url[160];

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AppHeader } from "@/components/AppHeader";
 import { Panel } from "@/components/ui/Panel";
 import { useAuth } from "@/lib/auth";
@@ -20,12 +20,38 @@ export default function Control() {
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
-  // Umbrales editables (se siembran del device)
+  // ── Estado de control REAL del device (read-back) ──────────────────────────
+  // Preferí la telemetría: el firmware nuevo reporta temp_on/temp_off/fan_mode
+  // (migración 0010). Si vienen null (firmware viejo, p.ej. Centinela 01 en campo
+  // sin OTA), caé al último `setpoint`/`fan_mode` CON ACK de la tabla commands —
+  // así el panel refleja lo último realmente aplicado, nunca un valor inventado.
+  const lastAckedSetpoint = commands.find(
+    (c) =>
+      c.type === "setpoint" &&
+      c.ack_ts &&
+      typeof c.payload?.temp_on === "number" &&
+      typeof c.payload?.temp_off === "number"
+  );
+  const liveOn =
+    latest?.temp_on ?? (lastAckedSetpoint?.payload?.temp_on as number | undefined);
+  const liveOff =
+    latest?.temp_off ?? (lastAckedSetpoint?.payload?.temp_off as number | undefined);
+  const liveMode: string | null =
+    latest?.fan_mode ??
+    ((commands.find((c) => c.type === "fan_mode" && c.ack_ts)?.payload?.mode as
+      | string
+      | undefined) ??
+      null);
+  const controlSrc: "device" | "cmd" | "none" =
+    latest?.temp_on != null ? "device" : lastAckedSetpoint ? "cmd" : "none";
+
+  // Umbrales de alarma editables (se siembran del device)
   const [warn, setWarn] = useState(thr.warn);
   const [serious, setSerious] = useState(thr.serious);
   const [crit, setCrit] = useState(thr.crit);
+  // Setpoint del fan editable (se siembra UNA vez del estado real del device)
   const [tOn, setTOn] = useState(40);
-  const [tOff, setTOff] = useState(35);
+  const [tOff, setTOff] = useState(25);
   useEffect(() => {
     // Siembra los inputs desde los umbrales del device (fuente externa).
     /* eslint-disable react-hooks/set-state-in-effect */
@@ -34,6 +60,16 @@ export default function Control() {
     setCrit(thr.crit);
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [thr.warn, thr.serious, thr.crit]);
+
+  // Siembra el setpoint SOLO la primera vez que llega el estado real (evita pisar
+  // lo que el operador escribe cada vez que entra una telemetría nueva).
+  const seeded = useRef(false);
+  useEffect(() => {
+    if (seeded.current || liveOn == null || liveOff == null) return;
+    setTOn(liveOn);
+    setTOff(liveOff);
+    seeded.current = true;
+  }, [liveOn, liveOff]);
 
   const canSend = isOperator && !!supabase;
 
@@ -57,7 +93,8 @@ export default function Control() {
       return { error: error?.message };
     });
 
-  const fanMode = latest?.fan_on == null ? "—" : latest.fan_on ? "ON" : "OFF";
+  const curMode = liveMode ? liveMode.toUpperCase() : "—";
+  const curDuty = latest?.fan_duty != null ? `${latest.fan_duty}%` : "—";
 
   return (
     <div className="min-h-full">
@@ -85,9 +122,26 @@ export default function Control() {
           </div>
         )}
 
+        {/* Estado real del ventilador (read-back del device) */}
+        <Panel title="Estado actual del ventilador">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-1.5 font-mono text-sm text-ink-dim">
+            <span>modo <b className="text-ink">{curMode}</b></span>
+            <span>duty <b className="text-ink">{curDuty}</b></span>
+            <span>enciende <b className="text-ink">{liveOn != null ? `${liveOn}°C` : "—"}</b></span>
+            <span>apaga <b className="text-ink">{liveOff != null ? `${liveOff}°C` : "—"}</b></span>
+            <span className="text-[11px] text-ink-faint">
+              {controlSrc === "device"
+                ? "· leído del device en vivo"
+                : controlSrc === "cmd"
+                  ? "· según último comando aplicado (unidad sin read-back)"
+                  : "· sin datos de control todavía"}
+            </span>
+          </div>
+        </Panel>
+
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {/* Ventilador */}
-          <Panel title={`Ventilador · ahora ${fanMode}`}>
+          <Panel title={`Ventilador · modo ${curMode}`}>
             <div className="space-y-3">
               <div className="flex gap-2">
                 {(["auto", "on", "off"] as const).map((m) => (
@@ -154,11 +208,15 @@ export default function Control() {
           <Panel title="Energía / reinicio">
             <div className="space-y-2">
               <ConfirmButton
-                label="Power-cycle Starlink"
-                disabled={!canSend || busy != null}
-                busy={busy === "pc"}
-                onClick={() => cmd("pc", "power_cycle", { target: "starlink" })}
+                label="Power-cycle Starlink (no disponible)"
+                disabled
+                onClick={() => {}}
               />
+              <p className="font-mono text-[11px] text-ink-faint">
+                Requiere el relé de 12&nbsp;V en la unidad (I5) — aún no instalado.
+                Hoy el firmware solo confirma el comando, no corta energía →
+                deshabilitado para no dar falsa sensación de control.
+              </p>
               <ConfirmButton
                 label="Reiniciar la unidad"
                 danger
@@ -167,7 +225,8 @@ export default function Control() {
                 onClick={() => cmd("rb", "reboot", {})}
               />
               <p className="font-mono text-[11px] text-ink-faint">
-                La unidad aplica estos comandos a los pocos segundos de recibirlos.
+                El reinicio se aplica a los pocos segundos. ⚠️ En una unidad en
+                campo (p.ej. Centinela 01) corta ~30&nbsp;s de telemetría.
               </p>
             </div>
           </Panel>
