@@ -32,6 +32,7 @@ function ThemeToggle() {
 
 const LINKS = [
   { href: "/", label: "Comandas" },
+  { href: "/materiales", label: "Materiales" },
   { href: "/inventario", label: "Inventario" },
 ];
 

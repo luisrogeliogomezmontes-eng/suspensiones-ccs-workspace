@@ -9,6 +9,7 @@ import { toneColor, comandaEstadoColor } from "./tone";
 
 export function ComandaCard({ c, nowMs }: { c: Comanda; nowMs: number }) {
   const t = totals(c, nowMs);
+  const sinCron = t.realTotal < 0.01 && c.etapas.every((e) => !e.inicio);
   const current = t.current;
   const sem = current ? semaforo(current, nowMs) : null;
   const currentReal = current ? realH(current, nowMs) : 0;
@@ -96,16 +97,22 @@ export function ComandaCard({ c, nowMs }: { c: Comanda; nowMs: number }) {
 
       {/* Footer: tiempos */}
       <div className="mt-3 flex items-center justify-between border-t pt-2.5 text-xs" style={{ borderColor: "var(--border)" }}>
-        <span style={{ color: "var(--ink-dim)" }}>
-          Real <span className="num" style={{ color: "var(--ink)" }}>{hDec(t.realTotal)}</span>
-          <span style={{ color: "var(--ink-faint)" }}> / {hDec(TOTAL_EST)} est.</span>
-        </span>
-        {t.excedidoTotal > 0.01 ? (
-          <span className="num" style={{ color: "var(--serious)" }}>
-            +{hm(t.excedidoTotal)} sobre estimado
-          </span>
+        {sinCron ? (
+          <span style={{ color: "var(--ink-faint)" }}>Terminada · sin cronómetro</span>
         ) : (
-          <span style={{ color: "var(--ok)" }}>en tiempo</span>
+          <>
+            <span style={{ color: "var(--ink-dim)" }}>
+              Real <span className="num" style={{ color: "var(--ink)" }}>{hDec(t.realTotal)}</span>
+              <span style={{ color: "var(--ink-faint)" }}> / {hDec(TOTAL_EST)} est.</span>
+            </span>
+            {t.excedidoTotal > 0.01 ? (
+              <span className="num" style={{ color: "var(--serious)" }}>
+                +{hm(t.excedidoTotal)} sobre estimado
+              </span>
+            ) : (
+              <span style={{ color: "var(--ok)" }}>en tiempo</span>
+            )}
+          </>
         )}
       </div>
     </Link>

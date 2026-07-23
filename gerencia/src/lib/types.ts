@@ -24,6 +24,7 @@ export type Comanda = {
   solicitante: string;
   fechaPedido: string | null; // ISO
   estado: EstadoComanda;
+  notas: string;
   etapas: Etapa[];
 };
 
@@ -39,8 +40,19 @@ export type InventarioItem = {
   enBom: boolean; // cantUd > 0
 };
 
+export type BomRow = {
+  id: string;
+  item: string; // "Jumpers → Centinela"
+  cantUd: number; // cantidad por unidad
+  fases: string[]; // etapas donde se usa
+  comprado: number; // total comprado (rollup desde inventario)
+  faltante: number; // faltante para el lote
+  alcance: number; // para cuántas unidades alcanza lo comprado
+};
+
 export type BoardState = {
   comandas: Comanda[];
   inventario: InventarioItem[];
+  bom: BomRow[];
   generatedAt: string; // ISO
 };

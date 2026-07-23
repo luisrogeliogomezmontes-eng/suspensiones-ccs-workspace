@@ -5,6 +5,7 @@ import { totals } from "@/lib/derive";
 import { relTime } from "@/lib/format";
 import { useNow } from "./useNow";
 import { ComandaCard } from "./ComandaCard";
+import { NewComanda } from "./NewComanda";
 
 function Kpi({ value, label, color }: { value: number | string; label: string; color?: string }) {
   return (
@@ -71,6 +72,14 @@ export function Board({ initial }: { initial: BoardState }) {
           <Kpi value={excedidas} label="Excedidas" color={excedidas > 0 ? "var(--serious)" : "var(--ink)"} />
           <Kpi value={hechas} label="Hechas" color="var(--ok)" />
         </div>
+      </div>
+
+      <div className="mt-4 flex justify-end">
+        <NewComanda
+          suggested={`Centinela A2 · Unidad #${String(state.comandas.length + 1).padStart(2, "0")}`}
+          bom={state.bom}
+          activas={comandas.length}
+        />
       </div>
 
       {/* Grid de comandas */}

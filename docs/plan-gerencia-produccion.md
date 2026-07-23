@@ -4,7 +4,8 @@
 > Objetivo: tablero interactivo del **proceso de fabricación** tratado como **comandas**, con cronómetro por
 > etapa, % de avance, detección de exceso de tiempo y analítica de rendimiento; + **disponibilidad de
 > inventario** ("componentes para N centinelas") vinculada al inventario real.
-> Arrancado 2026-07-23. Fase 1 (modelo en Notion) **hecha**. Fases 2–5 pendientes.
+> Arrancado 2026-07-23. **Fases 1–3 hechas y desplegadas** → **https://gerencia-xi.vercel.app** (pública).
+> App en [`gerencia/`](../gerencia/). Fase 4 (analítica) y 5 (3D) pendientes.
 
 ## 0. Arquitectura (decidida con Luis)
 
@@ -117,8 +118,8 @@ chequeo **"¿alcanza para esta comanda?"** por componente ya se puede calcular e
 | Fase | Entregable | Estado |
 |---|---|---|
 | **1** | Modelo Notion: `Comandas` + `Fabricación·Etapas` + fórmulas de tiempo/exceso + `% avance` + `Alcance` inventario + comanda demo. | ✅ **HECHA** (2026-07-23) |
-| **2** | App Next en Vercel (lectura): tablero de comandas por etapa, % avance, cronómetros en vivo, semáforo de tiempo, disponibilidad. Deploy público. | ⬜ |
-| **3** | Escritura: botones empezar/terminar etapa → Notion (+ PIN). Descuento de inventario (disparador §5). | ⬜ |
+| **2** | App Next en Vercel (`gerencia/`): board de comandas (% avance, cronómetros en vivo, semáforo), detalle, inventario. **Pública** en gerencia-xi.vercel.app. | ✅ **HECHA** (2026-07-23) |
+| **3** | Escritura: Empezar/Terminar/Reabrir/Bloquear etapa → Notion (**PIN**, `WRITE_PIN`) · **crear comanda** (genera 7 etapas) · vista **Materiales por etapa** (BOM multi-select `Fases` → qué bloquea cada fase → compras) · **descuento** por comanda (computado: `comprado − usa/ud × comandas activas`). | ✅ **HECHA** (2026-07-23) |
 | **4** | Analítica de tiempos (heatmap rendimiento por fase) → afinar estimados. | ⬜ |
 | **5** | Visual del Centinela: foto anotada → exploded view 3D (Three.js / model-viewer con `.glb` de la caja). | ⬜ (diferido) |
 

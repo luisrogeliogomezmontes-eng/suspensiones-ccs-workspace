@@ -96,3 +96,54 @@ export function pComputedNumber(p: NotionProp | undefined): number {
   }
   return pNumber(p);
 }
+export function pMultiSelect(p: NotionProp | undefined): string[] {
+  const arr = (p?.multi_select as { name?: string }[]) ?? [];
+  return arr.map((o) => o.name ?? "").filter(Boolean);
+}
+
+/** Escribe propiedades en una página (PATCH). Server-only. */
+export async function updatePage(
+  pageId: string,
+  properties: Record<string, unknown>,
+): Promise<void> {
+  const res = await fetch(`${NOTION_API}/pages/${pageId}`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token()}`,
+      "Notion-Version": NOTION_VERSION,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ properties }),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(`Notion PATCH ${res.status}: ${txt.slice(0, 300)}`);
+  }
+}
+
+/** Crea una página bajo una data source y devuelve su id. Server-only. */
+export async function createPage(
+  dataSourceId: string,
+  properties: Record<string, unknown>,
+): Promise<string> {
+  const res = await fetch(`${NOTION_API}/pages`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token()}`,
+      "Notion-Version": NOTION_VERSION,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      parent: { type: "data_source_id", data_source_id: dataSourceId },
+      properties,
+    }),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(`Notion POST ${res.status}: ${txt.slice(0, 300)}`);
+  }
+  const j = (await res.json()) as { id: string };
+  return j.id;
+}

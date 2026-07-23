@@ -9,10 +9,12 @@ import {
   pRelationIds,
   pUniqueId,
   pComputedNumber,
+  pMultiSelect,
   type NotionPage,
 } from "./notion";
 import type {
   BoardState,
+  BomRow,
   Comanda,
   Etapa,
   EstadoComanda,
@@ -52,6 +54,7 @@ function parseComanda(pg: NotionPage): Comanda {
     solicitante: pText(props["Solicitante"]),
     fechaPedido: pDateStart(props["Fecha pedido"]),
     estado: (pSelect(props["Estado"]) || "Pendiente") as EstadoComanda,
+    notas: pText(props["Notas"]),
     etapas: [],
   };
 }
@@ -113,7 +116,31 @@ export async function getInventario(): Promise<InventarioItem[]> {
     });
 }
 
+function parseBom(pg: NotionPage): BomRow {
+  const props = pg.properties;
+  const cantUd = pNumber(props["Cant por unidad"]);
+  const comprado = pComputedNumber(props["Comprado (inv)"]);
+  return {
+    id: pg.id,
+    item: pTitle(props["Ítem"]),
+    cantUd,
+    fases: pMultiSelect(props["Fases"]),
+    comprado,
+    faltante: pComputedNumber(props["Faltante"]),
+    alcance: cantUd > 0 ? Math.floor(comprado / cantUd) : 0,
+  };
+}
+
+export async function getBom(): Promise<BomRow[]> {
+  const pages = await queryDataSource(env("NOTION_DS_BOM"));
+  return pages.map(parseBom).sort((a, b) => a.item.localeCompare(b.item));
+}
+
 export async function getBoardState(): Promise<BoardState> {
-  const [comandas, inventario] = await Promise.all([getComandas(), getInventario()]);
-  return { comandas, inventario, generatedAt: new Date().toISOString() };
+  const [comandas, inventario, bom] = await Promise.all([
+    getComandas(),
+    getInventario(),
+    getBom(),
+  ]);
+  return { comandas, inventario, bom, generatedAt: new Date().toISOString() };
 }

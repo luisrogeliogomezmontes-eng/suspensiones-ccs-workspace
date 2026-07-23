@@ -8,9 +8,10 @@ export const dynamic = "force-dynamic";
 let cache: { at: number; data: unknown } | null = null;
 const TTL_MS = 8000;
 
-export async function GET() {
+export async function GET(req: Request) {
+  const fresh = new URL(req.url).searchParams.has("fresh");
   try {
-    if (cache && Date.now() - cache.at < TTL_MS) {
+    if (!fresh && cache && Date.now() - cache.at < TTL_MS) {
       return NextResponse.json(cache.data);
     }
     const data = await getBoardState();
