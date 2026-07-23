@@ -1,0 +1,150 @@
+@import "tailwindcss";
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Gerencia · Producción — mismo lenguaje visual que el dashboard de telemetría
+   ("mission-control de rally"): superficies grafito, tinta fría, azul-señal con
+   moderación, colores de ESTADO reservados (nunca decorativos).
+   ─────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  --bg: #0e1116;
+  --panel: #161b22;
+  --panel-2: #1c2330;
+  --border: #232b38;
+  --border-2: #2e3849;
+
+  --ink: #e6edf3;
+  --ink-dim: #9aa7b6;
+  --ink-faint: #5c6775;
+
+  --signal: #3b9eff;
+  --signal-dim: #1e4b73;
+
+  --ok: #34d399;
+  --warn: #fbbf24;
+  --serious: #fb923c;
+  --crit: #f43f5e;
+
+  --grid: #1b2330;
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --bg: #f3f5f8;
+  --panel: #ffffff;
+  --panel-2: #f7f9fc;
+  --border: #dce2ea;
+  --border-2: #c7d0dc;
+
+  --ink: #131922;
+  --ink-dim: #4a5666;
+  --ink-faint: #8a97a6;
+
+  --signal: #1f6fd6;
+  --signal-dim: #b9d6f5;
+
+  --ok: #0f9d6b;
+  --warn: #b47908;
+  --serious: #c2560f;
+  --crit: #d4344e;
+
+  --grid: #e6ebf1;
+  color-scheme: light;
+}
+
+@theme inline {
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-saira);
+  --font-mono: var(--font-jetbrains);
+}
+
+html,
+body {
+  height: 100%;
+}
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-inter), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer components {
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+  }
+  .num {
+    font-family: var(--font-jetbrains), ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+  .eyebrow {
+    font-family: var(--font-saira), sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--ink-faint);
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    border: 1px solid var(--border-2);
+    color: var(--ink-dim);
+    white-space: nowrap;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.5rem 0.9rem;
+    border-radius: 10px;
+    border: 1px solid var(--border-2);
+    background: var(--panel-2);
+    color: var(--ink);
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .btn:hover {
+    border-color: var(--signal);
+  }
+}
+
+/* Tonos de estado reutilizables (texto + fondo suave) */
+.tone-idle {
+  color: var(--ink-faint);
+}
+.tone-running {
+  color: var(--signal);
+}
+.tone-over {
+  color: var(--crit);
+}
+.tone-done-ok {
+  color: var(--ok);
+}
+.tone-done-over {
+  color: var(--serious);
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+.live-dot {
+  animation: pulse-dot 1.6s ease-in-out infinite;
+}
